@@ -1,10 +1,7 @@
 #include "JackTokenizer.hpp"
 
-#include <utility>
-
 JackTokenizer::JackTokenizer(std::string fName, std::string outfName) {
     CODE code;
-
     std::vector<std::string> fNames = {};
 
     if (std::filesystem::is_directory(fName.c_str())){
@@ -78,6 +75,10 @@ void JackTokenizer::tokenizeCode() {
     CODE tokens;
     CODE temp_tokens;
 
+    std::string lexiconType;
+    std::string xmlElement;
+    std::string str;
+
     for (auto &code: m_code) {
 
 //      C++ magic to remove trailing spaces
@@ -88,16 +89,29 @@ void JackTokenizer::tokenizeCode() {
 
         if (isNotEmpty(token)){
             temp_tokens = splitString(token, ' ');
+
             for (auto &item: temp_tokens){
                 if (isValid(validKeywords, item) || isValid(validSymbols, item)){
-                    std::cout << item << std::endl;
-                    tokens.push_back(token);
+                    if (item == "class"){
+                     xmlElement = "<class>" + item;
+                    }
+//                    lexiconType = isValid(validKeywords, item) ? "keyword" : "symbol";
+//                    xmlElement = "<" + lexiconType + ">" + item + "</" + lexiconType + ">";
+//                    tokens.push_back(xmlElement);
                 }
                 else{
-//                    lookup the grammar rules
+                    if (isNotEmpty(item)) {
+                        lexiconType = "identifier";
+                        xmlElement = "<" + lexiconType + ">" + item + "</" + lexiconType + ">";
+                        tokens.push_back(xmlElement);
+                    }
                 }
             }
         }
+    }
+
+    for (auto &item: tokens){
+        std::cout << item << std::endl;
     }
 }
 
@@ -118,24 +132,61 @@ bool JackTokenizer::isNotEmpty(std::string& str) {
 
     return false;
 }
-
 CODE JackTokenizer::splitString(std::string str, char delim) {
     CODE vec;
     std::string temp;
+    std::string temp2;
     size_t idx = 0;
 
     while (idx != std::string::npos) {
         idx = str.find(delim);
         temp = str.substr(0, idx);
         temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
-        if (isNotEmpty(temp)){
-         vec.push_back(temp);
-        }
+        if (isNotEmpty(temp)) {
+            if (temp.find('.') != std::string::npos) {
+                temp2 = temp.substr(0, temp.find('.'));
+                vec.push_back(temp2);
+                vec.push_back(".");
+                temp = temp.substr(temp.find('.') + 1);
+            }
 
-        str = str.substr(idx + 1);
-        if (idx >= str.length()){
-            vec.push_back(str);
-            break;
+            if (temp.find('(') != std::string::npos) {
+                temp2 = temp.substr(0, temp.find('('));
+                vec.push_back(temp2);
+                vec.push_back("(");
+                temp = temp.substr(temp.find('(') + 1);
+            }
+
+            if (temp.find(')') != std::string::npos) {
+                vec.push_back(")");
+                temp = temp.substr(temp.find(')') + 1);
+            }
+            if (temp.ends_with(';') && !(temp == ";")) {
+                temp2 = temp;
+                temp = temp.substr(0, str.find(';'));
+            }
+            vec.push_back(temp);
+            if (temp2.ends_with(';') && !(temp == ";")) {
+                vec.push_back(";");
+                break;
+            }
+
+            if (temp == ";"){
+                break;
+            }
+
+            str = str.substr(idx + 1);
+            if (idx >= str.length()) {
+                if (str.ends_with(';')) {
+                    temp2 = str;
+                    str = str.substr(0, str.find(';'));
+                }
+                vec.push_back(str);
+                if (temp2.ends_with(';')) {
+                    vec.push_back(";");
+                }
+                break;
+            }
         }
     }
     return vec;

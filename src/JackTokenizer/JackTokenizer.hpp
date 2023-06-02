@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include "../pugixml/pugixml.hpp"
 
 typedef std::vector<std::string> CODE;
 
@@ -39,5 +40,5 @@ private:
     static void to_lower(std::string &str);
     static bool isValid(CODE const& vec, std::string& str);
     static bool isNotEmpty(std::string& str);
-    static CODE splitString(std::string str, char delim);
+    static CODE splitString(std::string str, char deli);
 };
