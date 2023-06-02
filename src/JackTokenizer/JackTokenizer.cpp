@@ -122,9 +122,10 @@ bool JackTokenizer::isNotEmpty(std::string& str) {
 CODE JackTokenizer::splitString(std::string str, char delim) {
     CODE vec;
     std::string temp;
+    size_t idx = 0;
 
-    auto idx = str.find(delim);
     while (idx != std::string::npos) {
+        idx = str.find(delim);
         temp = str.substr(0, idx);
         temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
         if (isNotEmpty(temp)){
@@ -133,7 +134,8 @@ CODE JackTokenizer::splitString(std::string str, char delim) {
 
         str = str.substr(idx + 1);
         if (idx >= str.length()){
-           break;
+            vec.push_back(str);
+            break;
         }
     }
     return vec;
