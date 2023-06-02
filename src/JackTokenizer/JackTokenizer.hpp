@@ -32,7 +32,12 @@ public:
     void printCode();
     void cleanCode();
 
+public:
+    void tokenizeCode();
+
 private:
     static void to_lower(std::string &str);
-
+    static bool isValid(CODE const& vec, std::string& str);
+    static bool isNotEmpty(std::string& str);
+    static CODE splitString(std::string str, char delim);
 };
