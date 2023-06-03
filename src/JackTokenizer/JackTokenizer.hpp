@@ -23,9 +23,19 @@ private:
         ERROR_FILE_NOT_FOUND = -1,
     };
 
+    struct codeInfo{
+        bool classDec = false;
+        bool varDec = false;
+        bool classVarDec = false;
+        bool declrBegin;
+        bool codeSwitch = false;
+    } codeInfo;
+
     CODE validKeywords = {"if", "while", "class", "constructor", "function", "method", "field", "static", "var", "int",
                           "char", "boolean", "void", "true", "false", "this", "let", "do", "else", "return"};
     CODE validSymbols = {"{", "}", "(", ")", "[", "]", ".",  ",",  ";",  "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"};
+    CODE validVarDecs = {"static", "field", "var", "int", "char", "boolean"};
+
 
 public:
    explicit JackTokenizer(std::string fName, std::string outfName);
