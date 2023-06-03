@@ -9,6 +9,7 @@
 #include "../pugixml/pugixml.hpp"
 
 typedef std::vector<std::string> CODE;
+typedef pugi::xml_node node;
 
 class JackTokenizer{
 private:

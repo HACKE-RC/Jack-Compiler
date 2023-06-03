@@ -79,6 +79,13 @@ void JackTokenizer::tokenizeCode() {
     std::string xmlElement;
     std::string str;
 
+    pugi::xml_document xmlDoc;
+    node class_node;
+    int counter = 0;
+
+//    bool classDec = false;
+//    bool classVarDec = false;
+
     for (auto &code: m_code) {
 
 //      C++ magic to remove trailing spaces
@@ -86,6 +93,7 @@ void JackTokenizer::tokenizeCode() {
         std::string token(code.begin(), tokenNoSpace);
         auto tokenNoSpace2 = std::find_if_not(token.begin(), token.end(), ::isspace).base();
         token = tokenNoSpace2;
+        node classVarNode;
 
         if (isNotEmpty(token)){
             temp_tokens = splitString(token, ' ');
@@ -93,26 +101,39 @@ void JackTokenizer::tokenizeCode() {
             for (auto &item: temp_tokens){
                 if (isValid(validKeywords, item) || isValid(validSymbols, item)){
                     if (item == "class"){
-                     xmlElement = "<class>" + item;
+                        class_node = xmlDoc.append_child("class");
+//                        classDec = true;
                     }
-//                    lexiconType = isValid(validKeywords, item) ? "keyword" : "symbol";
-//                    xmlElement = "<" + lexiconType + ">" + item + "</" + lexiconType + ">";
-//                    tokens.push_back(xmlElement);
+                    node type_node;
+
+                    lexiconType = isValid(validKeywords, item) ? "keyword" : "symbol";
+//                    class_node = classVarDec ? classVarNode : class_node;
+
+                   type_node = class_node.append_child(lexiconType.c_str());
+
+                    type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+
+//                    if (classDec && (counter == 2)){
+//                        classVarDec = true;
+//                        classVarNode = class_node.append_child("classVarDec");
+//                        classDec = false;
+//                        counter = 0;
+//                    }
+//                    counter++;
                 }
                 else{
                     if (isNotEmpty(item)) {
                         lexiconType = "identifier";
-                        xmlElement = "<" + lexiconType + ">" + item + "</" + lexiconType + ">";
-                        tokens.push_back(xmlElement);
+                        node type_node = class_node.append_child(lexiconType.c_str());
+                        type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+//                        counter++;
                     }
                 }
             }
         }
     }
 
-    for (auto &item: tokens){
-        std::cout << item << std::endl;
-    }
+    xmlDoc.save(std::cout);
 }
 
 bool JackTokenizer::isValid(const CODE &vec, std::string &str) {
