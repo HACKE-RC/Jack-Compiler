@@ -141,10 +141,21 @@ void JackTokenizer::tokenizeCode() {
 
                 }
                 else{
+
+                    node type_node = class_node.append_child(lexiconType.c_str());
                     if (isNotEmpty(item)) {
                         lexiconType = "identifier";
-                        node type_node = class_node.append_child(lexiconType.c_str());
+                    if (codeInfo.classVarDec){
+                        node k_node = classVarNode.append_child(lexiconType.c_str());
+                        k_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+                    }
+                    else{
+                        type_node = class_node.append_child(lexiconType.c_str());
                         type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+
+                    }
+
+//                        type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
                 }
             }
