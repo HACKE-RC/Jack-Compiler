@@ -12,9 +12,9 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    - name: make
-      run: pwd; cd ../../; make; pwd
+    - name: make 
+      run: make CMakeLists.txt
     - name: make check
-      run: cd ../../; make check
+      run: make check
     - name: make distcheck
-      run: cd ../../; make distcheck
+      run: make distcheck
