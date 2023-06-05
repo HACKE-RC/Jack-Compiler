@@ -146,7 +146,6 @@ void JackTokenizer::tokenizeCode() {
                         k_node.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
                     else{
-                        k = item;
                         type_node = class_node.append_child(lexiconType.c_str());
                         type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
 
@@ -167,7 +166,6 @@ void JackTokenizer::tokenizeCode() {
 
                         }
 
-//                        type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
                 }
             }
