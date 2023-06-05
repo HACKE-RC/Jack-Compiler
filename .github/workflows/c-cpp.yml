@@ -12,10 +12,9 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    - uses: actions/checkout@v3
     - name: make
-      run: make
+      run: pwd; cd ../../; make
     - name: make check
-      run: make check
+      run: cd ../../; make check
     - name: make distcheck
-      run: make distcheck
+      run: cd ../../; make distcheck
