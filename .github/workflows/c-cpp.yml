@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: make
-      run: pwd; cd ../../; make
+      run: pwd; cd ../../; make; pwd
     - name: make check
       run: cd ../../; make check
     - name: make distcheck
