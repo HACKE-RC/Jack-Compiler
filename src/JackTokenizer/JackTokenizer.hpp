@@ -27,14 +27,19 @@ private:
         bool classDec = false;
         bool varDec = false;
         bool classVarDec = false;
-        bool declrBegin;
+        bool classDecBegin;
+        bool varDecEnd = false;
+        bool varDecBegin = false;
+        bool subroutineDecBegin;
+        bool subroutineDec = false;
         bool codeSwitch = false;
     } codeInfo;
 
     CODE validKeywords = {"if", "while", "class", "constructor", "function", "method", "field", "static", "var", "int",
                           "char", "boolean", "void", "true", "false", "this", "let", "do", "else", "return"};
     CODE validSymbols = {"{", "}", "(", ")", "[", "]", ".",  ",",  ";",  "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"};
-    CODE validVarDecs = {"static", "field", "var", "int", "char", "boolean"};
+    CODE validVarDecs = {"static", "field", "var"};
+    CODE validSubroutineDec = {"function", "method", "constructor"};
 
 
 public:
@@ -47,6 +52,8 @@ public:
 public:
     void tokenizeCode();
 
+public:
+    node returnNode(std::string item, const std::string& lexiconType, node classNode);
 private:
     static void to_lower(std::string &str);
     static bool isValid(CODE const& vec, std::string& str);

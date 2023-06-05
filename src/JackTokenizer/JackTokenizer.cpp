@@ -81,14 +81,12 @@ void JackTokenizer::tokenizeCode() {
 
     pugi::xml_document xmlDoc;
     node class_node;
-    int counter = 0;
     node classVarNode;
-//    bool classDec = false;
-//    bool classVarDec = false;
+    std::string k;
+    int counter = 0;
 
     for (auto &code: m_code) {
 
-//      C++ magic to remove trailing spaces
         auto tokenNoSpace = std::find_if_not(code.rbegin(), code.rend(), ::isspace).base();
         std::string token(code.begin(), tokenNoSpace);
         auto tokenNoSpace2 = std::find_if_not(token.begin(), token.end(), ::isspace).base();
@@ -99,7 +97,6 @@ void JackTokenizer::tokenizeCode() {
 
             for (auto &item: temp_tokens){
                 if (isValid(validKeywords, item) || isValid(validSymbols, item)){
-
 
                     if (item == "class"){
                         class_node = xmlDoc.append_child("class");
@@ -113,20 +110,35 @@ void JackTokenizer::tokenizeCode() {
                         codeInfo.varDec = true;
                     }
 
-                    if (!(codeInfo.varDec) && (codeInfo.classVarDec)){
-                        codeInfo.classVarDec = false;
-                        codeInfo.codeSwitch = true;
-
+                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch)){
+                        codeInfo.classDecBegin = true;
                     }
 
-                    if (codeInfo.classDec && codeInfo.declrBegin && codeInfo.varDec){
-                        classVarNode = class_node.append_child("classVarDec");
+                    if (!(codeInfo.varDec) && (codeInfo.classVarDec)){
+                        codeInfo.classVarDec = false;
+                    }
+
+                    std::string temp = "classVarDec" + std::to_string(counter);
+
+                    if (codeInfo.classVarDec && codeInfo.varDecEnd){
+                        codeInfo.varDecEnd = false;
+                        codeInfo.codeSwitch = true;
+                        if (codeInfo.classDecBegin && codeInfo.varDec){
+                            codeInfo.classVarDec = true;
+                            codeInfo.classDecBegin = false;
+                        }
+                        classVarNode = class_node.append_child(temp.c_str());
+                        counter++;
+                    }
+                    else if (codeInfo.classDec && codeInfo.classDecBegin && codeInfo.varDec){
+                        classVarNode = class_node.append_child(temp.c_str());
                         codeInfo.classVarDec = true;
-                        codeInfo.declrBegin = false;
+                        codeInfo.classDecBegin = false;
+                        counter++;
                     }
 
                     if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch)){
-                            codeInfo.declrBegin = true;
+                        codeInfo.classDecBegin = true;
                     }
 
                     if (codeInfo.classVarDec){
@@ -134,6 +146,7 @@ void JackTokenizer::tokenizeCode() {
                         k_node.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
                     else{
+                        k = item;
                         type_node = class_node.append_child(lexiconType.c_str());
                         type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
 
@@ -141,23 +154,25 @@ void JackTokenizer::tokenizeCode() {
 
                 }
                 else{
-
-                    node type_node = class_node.append_child(lexiconType.c_str());
+                    lexiconType = "identifier";
                     if (isNotEmpty(item)) {
-                        lexiconType = "identifier";
-                    if (codeInfo.classVarDec){
-                        node k_node = classVarNode.append_child(lexiconType.c_str());
-                        k_node.append_child(pugi::node_pcdata).set_value(item.c_str());
-                    }
-                    else{
-                        type_node = class_node.append_child(lexiconType.c_str());
-                        type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        if (codeInfo.classVarDec){
+                            node childNode = classVarNode.append_child(lexiconType.c_str());
+                            childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        }
+                        else{
+                            node type_node = class_node.append_child(lexiconType.c_str());
+//                            type_node = class_node.append_child(lexiconType.c_str());
+                            type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
 
-                    }
+                        }
 
 //                        type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
                 }
+            }
+            if (codeInfo.classVarDec && codeInfo.varDec){
+                codeInfo.varDecEnd = true;
             }
             codeInfo.varDec = false;
         }
@@ -175,12 +190,12 @@ bool JackTokenizer::isValid(const CODE &vec, std::string &str) {
 }
 
 bool JackTokenizer::isNotEmpty(std::string& str) {
-     std::string temp = str;
-     temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
+    std::string temp = str;
+    temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());
 
-     if (!temp.empty()){
-         return true;
-     }
+    if (!temp.empty()){
+        return true;
+    }
 
     return false;
 }
