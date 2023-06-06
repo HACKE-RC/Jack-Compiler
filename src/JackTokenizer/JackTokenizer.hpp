@@ -51,9 +51,11 @@ public:
 
 public:
     void tokenizeCode();
+    static void splitComma(std::string& str, CODE& vec);
+    static std::string addBrackets(std::string item, CODE &vec);
+    static int addSemicolon(std::string& item, CODE &vec);
+    static int addCurlyBrackets(std::string& item, CODE &vec);
 
-public:
-    node returnNode(std::string item, const std::string& lexiconType, node classNode);
 private:
     static void to_lower(std::string &str);
     static bool isValid(CODE const& vec, std::string& str);
