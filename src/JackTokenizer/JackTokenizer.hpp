@@ -55,10 +55,11 @@ public:
     static std::string addBrackets(std::string item, CODE &vec);
     static int addSemicolon(std::string& item, CODE &vec);
     static int addCurlyBrackets(std::string& item, CODE &vec);
+    static int parseFuncParams(std::string& item, CODE &vec);
 
 private:
     static void to_lower(std::string &str);
     static bool isValid(CODE const& vec, std::string& str);
     static bool isNotEmpty(std::string& str);
-    static CODE splitString(std::string str, char deli);
+    static CODE getCodeVector(std::string str, char delim);
 };

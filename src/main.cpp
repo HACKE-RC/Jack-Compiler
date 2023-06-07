@@ -8,6 +8,8 @@ int main(int argc, char* argv[]){
     JackTokenizer tokenizer(argv[1], "test.tst");
     tokenizer.cleanCode();
     tokenizer.tokenizeCode();
-
+    CODE vec;
+//    std::string s = "new(int Ax, int Ay, int Asize)";
+//    JackTokenizer::parseFuncParams(s, vec);
     return 0;
 }

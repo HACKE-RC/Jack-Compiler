@@ -83,6 +83,7 @@ void JackTokenizer::tokenizeCode() {
     node class_node;
     node classVarNode;
     int counter = 0;
+    node subroutineNode;
 
     for (auto &code: m_code) {
 
@@ -92,7 +93,7 @@ void JackTokenizer::tokenizeCode() {
         token = tokenNoSpace2;
 
         if (isNotEmpty(token)){
-            temp_tokens = splitString(token, ' ');
+            temp_tokens = getCodeVector(token, ' ');
 
             for (auto &item: temp_tokens){
                 if (isValid(validKeywords, item) || isValid(validSymbols, item)){
@@ -100,6 +101,11 @@ void JackTokenizer::tokenizeCode() {
                     if (item == "class"){
                         class_node = xmlDoc.append_child("class");
                         codeInfo.classDec = true;
+                    }
+
+                    if (isValid(validSubroutineDec, item)){
+                        codeInfo.subroutineDec = true;
+                        subroutineNode = class_node.append_child("subroutineDec");
                     }
 
                     node typeNode;
@@ -144,6 +150,10 @@ void JackTokenizer::tokenizeCode() {
                         node childNode = classVarNode.append_child(lexiconType.c_str());
                         childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
+                    else if (codeInfo.subroutineDec){
+                        node childNode = subroutineNode.append_child(lexiconType.c_str());
+                        childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                    }
                     else{
                         typeNode = class_node.append_child(lexiconType.c_str());
                         typeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
@@ -156,6 +166,10 @@ void JackTokenizer::tokenizeCode() {
                     if (isNotEmpty(item)) {
                         if (codeInfo.classVarDec){
                             node childNode = classVarNode.append_child(lexiconType.c_str());
+                            childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        }
+                        else if (codeInfo.subroutineDec){
+                            node childNode = subroutineNode.append_child(lexiconType.c_str());
                             childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
                         }
                         else{
@@ -171,6 +185,7 @@ void JackTokenizer::tokenizeCode() {
                 codeInfo.varDecEnd = true;
             }
             codeInfo.varDec = false;
+            codeInfo.subroutineDec = false;
         }
 
     }
@@ -195,7 +210,7 @@ bool JackTokenizer::isNotEmpty(std::string& str) {
 
     return false;
 }
-CODE JackTokenizer::splitString(std::string str, char delim) {
+CODE JackTokenizer::getCodeVector(std::string str, char delim) {
     CODE vec;
     std::string item;
     std::string temp2;
@@ -209,6 +224,15 @@ CODE JackTokenizer::splitString(std::string str, char delim) {
         if (item.find(',') != std::string::npos) {
             item = str.substr(0, str.find_last_of(',')+1);
             idx = str.find_last_of(',')+1;
+        }
+
+        if ((item.find('(') != std::string::npos) && (item.find('(') != std::string::npos)){
+            auto idx = item.find('(');
+            auto idx2 = item.find(')');
+            if ((idx+1 != idx2) && (item.find(',') != std::string::npos)){
+                parseFuncParams(str, vec);
+                break;
+            }
         }
 
         if (isNotEmpty(item)) {
@@ -226,7 +250,6 @@ CODE JackTokenizer::splitString(std::string str, char delim) {
             if (item.empty()){
                 item = str.substr(idx);
                 item = item.substr(item.find_first_not_of(' '));
-//                continue;
             }
             item = addBrackets(item, vec);
             if (addSemicolon(item, vec) == -1){ break; }
@@ -253,15 +276,11 @@ void JackTokenizer::splitComma(std::string& str, std::vector<std::string>& vec){
 
     size_t idx = 0;
     std::string s2;
-//    idx = str.find(' ');
+
     while(idx!=std::string::npos){
         idx = str.find(' ');
         if (idx == std::string::npos){
             temp.push_back(str);
-//            idx = str.find(',');
-//            if (idx == std::string::npos){
-//                break;
-//            }
         }
         else{
             s2 = str.substr(0, idx);
@@ -271,7 +290,7 @@ void JackTokenizer::splitComma(std::string& str, std::vector<std::string>& vec){
         }
     }
 
-    for (auto k: temp){
+    for (const auto& k: temp){
         auto idx2 = k.find(',');
         if (idx2 != std::string::npos){
             s2 = k.substr(0, idx2);
@@ -289,19 +308,24 @@ void JackTokenizer::splitComma(std::string& str, std::vector<std::string>& vec){
                 str = "";
             }
             else{
-                auto idx_2 = str2.find(';');
-                if (idx != std::string::npos){
-                    str = str2.substr(idx+1);
+                if ((item.find(',') != std::string::npos) || (item.find(';') != std::string::npos)){
+                    idx2 = item.find(',');
+                    char to_find = idx2 == std::string::npos ? ';' : ',';
+                    str = str2.substr(item.find_last_of(to_find));
                 }
-                else{
-                    idx_2 = str2.find_last_of(',');
-                    if (idx_2 != std::string::npos){
-                        str = str2.substr(idx_2);
-                    }
+                else if((item.find('(') != std::string::npos) || (item.find(')') != std::string::npos)){
+                    idx2 =  item.find('(');
+                    char to_find = idx2 == std::string::npos ? ')' : '(';
+                    str = str2.substr(item.find_last_of(to_find));
+                }
+                else if ((item.find('{') != std::string::npos) || (item.find('}')) != std::string::npos){
+                    idx2 = item.find('{');
+                    char to_find = idx2 == std::string::npos ? '}' : '{';
+                    str = str2.substr(item.find_last_of(to_find));
                 }
             }
-        }
-    }
+       }
+   }
 }
 
 
@@ -316,12 +340,14 @@ std::string JackTokenizer::addBrackets(std::string item, CODE &vec) {
     }
 
     if (item.find(')') != std::string::npos) {
+        if (item.ends_with(')') && !(item == ")")) {
+            temp2 = item;
+            temp2 = temp2.substr(0, temp2.length() - 1);
+            vec.push_back(temp2);
+        }
         vec.push_back(")");
         item = item.substr(item.find(')') + 1);
     }
-//    addSemicolon(item, vec);
-//    addCurlyBrackets(item, vec);
-//    if (item.find('))
     return item;
 }
 
@@ -353,9 +379,14 @@ int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
 
 int JackTokenizer::addCurlyBrackets(std::string &item, CODE &vec) {
     if (item == "{" || item == "}") {
-//        item = item == "{" ? "{" : "}";
          vec.push_back(item);
     }
+    return 0;
+}
 
+int JackTokenizer::parseFuncParams(std::string &item, CODE &vec) {
+    if (item.find('(') != std::string::npos) {
+        splitComma(item, vec);
+    }
     return 0;
 }
