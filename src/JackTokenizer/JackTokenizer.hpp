@@ -33,6 +33,7 @@ private:
         bool subroutineDecBegin;
         bool subroutineDec = false;
         bool codeSwitch = false;
+        bool parameterDec = false;
     } codeInfo;
 
     CODE validKeywords = {"if", "while", "class", "constructor", "function", "method", "field", "static", "var", "int",
@@ -51,11 +52,13 @@ public:
 
 public:
     void tokenizeCode();
+    static int parseFuncParams(std::string& item, CODE &vec);
+
     static void splitComma(std::string& str, CODE& vec);
     static std::string addBrackets(std::string item, CODE &vec);
     static int addSemicolon(std::string& item, CODE &vec);
     static int addCurlyBrackets(std::string& item, CODE &vec);
-    static int parseFuncParams(std::string& item, CODE &vec);
+    static void test();
 
 private:
     static void to_lower(std::string &str);

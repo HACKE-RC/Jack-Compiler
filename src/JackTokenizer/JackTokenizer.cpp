@@ -84,6 +84,9 @@ void JackTokenizer::tokenizeCode() {
     node classVarNode;
     int counter = 0;
     node subroutineNode;
+    node test2;
+    node subroutineTypeNode;
+    node parameterNode;
 
     for (auto &code: m_code) {
 
@@ -115,7 +118,7 @@ void JackTokenizer::tokenizeCode() {
                         codeInfo.varDec = true;
                     }
 
-                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch)){
+                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch) && !(codeInfo.subroutineDec)){
                         codeInfo.classDecBegin = true;
                     }
 
@@ -142,7 +145,7 @@ void JackTokenizer::tokenizeCode() {
                         counter++;
                     }
 
-                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch)){
+                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch) && !(codeInfo.subroutineDec)){
                         codeInfo.classDecBegin = true;
                     }
 
@@ -150,16 +153,54 @@ void JackTokenizer::tokenizeCode() {
                         node childNode = classVarNode.append_child(lexiconType.c_str());
                         childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
                     }
-                    else if (codeInfo.subroutineDec){
-                        node childNode = subroutineNode.append_child(lexiconType.c_str());
-                        childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+////                    else if ((codeInfo.subroutineDec) && (item.length() == 1)){
+//                        std::cout << "INFO: " << item << std::endl;
+//                    }
+                    else if ((codeInfo.subroutineDec)){
+                        if (item.length() == 1){
+//                            codeInfo.subroutineDec = false;
+                                std::cout << "INFO: " << item << std::endl;
+                        }
+                        subroutineTypeNode = subroutineNode.append_child(lexiconType.c_str());
+                        auto it = std::find(temp_tokens.begin(), temp_tokens.end(), "(");
+                        if (it != temp_tokens.end()) {
+                            auto index = std::distance(temp_tokens.begin(), it);
+                            auto it2 = std::find(temp_tokens.begin(), temp_tokens.end(), ")");
+                            auto index2 = std::distance(temp_tokens.begin(), it2);
+                            if ((index+1) != index2){
+                                if (item == "("){
+                                    subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                                    parameterNode = subroutineNode.append_child("parameterList");
+                                    codeInfo.parameterDec = true;
+                                    continue;
+                                }
+                                else if ((item == ")") && (codeInfo.parameterDec)){
+                                    node closingChild = subroutineNode.insert_child_after("symbol", parameterNode);
+                                    closingChild.append_child(pugi::node_pcdata).set_value(item.c_str());
+                                    codeInfo.parameterDec = false;
+                                    continue;
+                                }
+                                else if (item=="{"){
+                                    // figure out how to fix this thing where we have invalid xml
+//                                    generally before an {
+                                       node childNode = classVarNode.append_child(lexiconType.c_str());
+                                       childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                                }
+                            }
+                        }
+                        if (codeInfo.parameterDec){
+                            parameterNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+//                            subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        }
+                        else{
+                            subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        }
                     }
                     else{
                         typeNode = class_node.append_child(lexiconType.c_str());
                         typeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
 
                     }
-
                 }
                 else{
                     lexiconType = "identifier";
@@ -169,8 +210,14 @@ void JackTokenizer::tokenizeCode() {
                             childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
                         }
                         else if (codeInfo.subroutineDec){
-                            node childNode = subroutineNode.append_child(lexiconType.c_str());
-                            childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                            if (codeInfo.parameterDec){
+                                subroutineTypeNode = parameterNode.append_child(lexiconType.c_str());
+                                subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                            }
+                            else{
+                                node childNode = subroutineNode.append_child(lexiconType.c_str());
+                                childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                            }
                         }
                         else{
                             node type_node = class_node.append_child(lexiconType.c_str());
@@ -186,6 +233,7 @@ void JackTokenizer::tokenizeCode() {
             }
             codeInfo.varDec = false;
             codeInfo.subroutineDec = false;
+            codeInfo.parameterDec = false;
         }
 
     }
@@ -221,18 +269,20 @@ CODE JackTokenizer::getCodeVector(std::string str, char delim) {
         item = str.substr(0, idx);
         item.erase(remove(item.begin(), item.end(), ' '), item.end());
 
-        if (item.find(',') != std::string::npos) {
-            item = str.substr(0, str.find_last_of(',')+1);
-            idx = str.find_last_of(',')+1;
-        }
 
-        if ((item.find('(') != std::string::npos) && (item.find('(') != std::string::npos)){
-            auto idx = item.find('(');
-            auto idx2 = item.find(')');
-            if ((idx+1 != idx2) && (item.find(',') != std::string::npos)){
+
+        if ((item.find('(') != std::string::npos)){
+            idx = str.find('(');
+            auto idx2 = str.find(')');
+            if ((idx+1 != idx2)){
                 parseFuncParams(str, vec);
                 break;
             }
+        }
+
+        if (item.find(',') != std::string::npos) {
+            item = str.substr(0, str.find_last_of(',')+1);
+            idx = str.find_last_of(',')+1;
         }
 
         if (isNotEmpty(item)) {
@@ -389,4 +439,15 @@ int JackTokenizer::parseFuncParams(std::string &item, CODE &vec) {
         splitComma(item, vec);
     }
     return 0;
+}
+
+void JackTokenizer::test() {
+    pugi::xml_document xmlDoc;
+    pugi::xml_node rootNode = xmlDoc.append_child("class");
+
+    node k_node = rootNode.append_child("child1");
+    k_node.append_child(pugi::node_pcdata).set_value("wow");
+
+    rootNode.insert_child_after("child2", k_node).text().set("kys");
+    xmlDoc.save(std::cout);
 }
