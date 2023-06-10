@@ -92,6 +92,7 @@ void JackTokenizer::tokenizeCode() {
     node subroutineVarNode;
     node varExpressionNode;
     node varTermNode;
+    node doStatementNode;
 
     for (auto &code: m_code) {
 
@@ -110,6 +111,24 @@ void JackTokenizer::tokenizeCode() {
                     if (item == "class"){
                         class_node = xmlDoc.append_child("class");
                         codeInfo.classDec = true;
+                    }
+
+                    if (item == "do"){
+                        codeInfo.doStatement = true;
+                        if (codeInfo.subroutineBodyBegin){
+                            doStatementNode = subroutineBodyNode.append_child("doStatement");
+                        }
+                        doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+                        continue;
+                    }
+
+                    if (codeInfo.doStatement){
+                        if (item == ";"){
+                            codeInfo.doStatement = false;
+                        }
+//                        addSemicolon()
+                        doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+//                        continue;
                     }
 
                     if (isValid(validSubroutineDec, item)){
@@ -142,8 +161,6 @@ void JackTokenizer::tokenizeCode() {
                                subroutineVarNode = subroutineStatementsNode.append_child("letStatement");
                            }
                        }
-
-
 
                        if (item == ";"){
                            codeInfo.subroutineVarDec = false;
@@ -248,6 +265,9 @@ void JackTokenizer::tokenizeCode() {
                         if (codeInfo.classVarDec){
                             node childNode = classVarNode.append_child(lexiconType.c_str());
                             childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        }
+                        else if (codeInfo.doStatement){
+                            doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
                         }
                         else if (codeInfo.subroutineDec){
                             if (codeInfo.parameterDec){
@@ -488,3 +508,4 @@ int JackTokenizer::parseFuncParams(std::string &item, CODE &vec) {
     }
     return 0;
 }
+#pragma clang diagnostic pop
