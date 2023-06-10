@@ -84,12 +84,14 @@ void JackTokenizer::tokenizeCode() {
     node classVarNode;
     int counter = 0;
     node subroutineNode;
-    node test2;
+//    node test2;
     node subroutineTypeNode;
     node parameterNode;
     node subroutineBodyNode;
     node subroutineStatementsNode;
     node subroutineVarNode;
+    node varExpressionNode;
+    node varTermNode;
 
     for (auto &code: m_code) {
 
@@ -133,19 +135,36 @@ void JackTokenizer::tokenizeCode() {
                     if (!(codeInfo.varDec) && (codeInfo.classVarDec)){
                         codeInfo.classVarDec = false;
                     }
-                    if (codeInfo.subroutineVarDec){
+
+                    if ((codeInfo.subroutineVarDec) && !(codeInfo.varExpression)){
                         if (isValid(validVarDecs, item)){
                            if (item=="let"){
                                subroutineVarNode = subroutineStatementsNode.append_child("letStatement");
                            }
                        }
 
+
+
                        if (item == ";"){
                            codeInfo.subroutineVarDec = false;
+                           codeInfo.varExpression = false;
                        }
 
                        subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                        continue;
+                       if (item == "="){
+                            varExpressionNode = subroutineVarNode.append_child("expression");
+                            codeInfo.varExpression = true;
+                        }
+                       continue;
+                    }
+
+                    if (codeInfo.varExpression){
+                        if (item == ";"){
+                            codeInfo.varExpression = false;
+                            subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+                            continue;
+                        }
+                        varExpressionNode.append_child(lexiconType.c_str()).text().set(item.c_str());
                     }
 
                     std::string temp = "classVarDec" + std::to_string(counter);
@@ -241,8 +260,13 @@ void JackTokenizer::tokenizeCode() {
                                 childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
                             }
                         }
-                        else if (codeInfo.subroutineBodyBegin){
-                                 subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+                        else if (codeInfo.subroutineVarDec){
+                            if (codeInfo.varExpression){
+                                varExpressionNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+                            }
+                            else{
+                                subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
+                            }
                         }
                         else{
                             node type_node = class_node.append_child(lexiconType.c_str());
@@ -258,6 +282,7 @@ void JackTokenizer::tokenizeCode() {
             codeInfo.subroutineDec = false;
             codeInfo.parameterDec = false;
             codeInfo.subroutineVarDec = false;
+            codeInfo.varExpression = false;
         }
     }
     xmlDoc.save(std::cout);
@@ -463,14 +488,3 @@ int JackTokenizer::parseFuncParams(std::string &item, CODE &vec) {
     }
     return 0;
 }
-
-//void JackTokenizer::test() {
-//    pugi::xml_document xmlDoc;
-//    pugi::xml_node rootNode = xmlDoc.append_child("class");
-//
-//    node k_node = rootNode.append_child("child1");
-//    k_node.append_child(pugi::node_pcdata).set_value("wow");
-//
-//    rootNode.insert_child_after("child2", k_node).text().set("kys");
-//    xmlDoc.save(std::cout);
-//}

@@ -37,6 +37,8 @@ private:
         bool subroutineBodyBegin = false;
         bool subroutineStatement = false;
         bool subroutineVarDec = false;
+        bool varExpression = false;
+        bool varTerm = false;
     } codeInfo;
 
     CODE validKeywords = {"if", "while", "class", "constructor", "function", "method", "field", "static", "var", "int",
