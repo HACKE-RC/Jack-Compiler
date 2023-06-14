@@ -40,6 +40,7 @@ JackTokenizer::JackTokenizer(std::string fName, std::string outfName) {
         }
     }
 
+
 }
 
 void JackTokenizer::to_lower(std::string &str) {
@@ -72,6 +73,9 @@ void JackTokenizer::cleanCode() {
 }
 
 void JackTokenizer::tokenizeCode() {
+    pugi::xml_document xmlDoc;
+    node tokenNode = xmlDoc.append_child("tokens");
+
     CODE tokens;
     CODE temp_tokens;
 
@@ -79,24 +83,7 @@ void JackTokenizer::tokenizeCode() {
     std::string xmlElement;
     std::string str;
 
-    pugi::xml_document xmlDoc;
-    node class_node;
-    node classVarNode;
-    int counter = 0;
-    node subroutineNode;
-//    node test2;
-    node subroutineTypeNode;
-    node parameterNode;
-    node subroutineBodyNode;
-    node subroutineStatementsNode;
-    node subroutineVarNode;
-    node varExpressionNode;
-    node varTermNode;
-    node doStatementNode;
-
     for (auto &code: m_code) {
-
-        node typeNode;
         auto tokenNoSpace = std::find_if_not(code.rbegin(), code.rend(), ::isspace).base();
         std::string token(code.begin(), tokenNoSpace);
         auto tokenNoSpace2 = std::find_if_not(token.begin(), token.end(), ::isspace).base();
@@ -104,206 +91,19 @@ void JackTokenizer::tokenizeCode() {
 
         if (isNotEmpty(token)){
             temp_tokens = getCodeVector(token);
-
             for (auto &item: temp_tokens){
-                if (isValid(validKeywords, item) || isValid(validSymbols, item)){
-
-                    if (item == "class"){
-                        class_node = xmlDoc.append_child("class");
-                        codeInfo.classDec = true;
-                    }
-
-                    if (item == "do"){
-                        codeInfo.doStatement = true;
-                        if (codeInfo.subroutineBodyBegin){
-                            doStatementNode = subroutineBodyNode.append_child("doStatement");
-                        }
-                        doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                        continue;
-                    }
-
-                    if (codeInfo.doStatement){
-                        if (item == ";"){
-                            codeInfo.doStatement = false;
-                        }
-//                        addSemicolon()
-                        doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-//                        continue;
-                    }
-
-                    if (isValid(validSubroutineDec, item)){
-                        codeInfo.subroutineDec = true;
-                        subroutineNode = class_node.append_child("subroutineDec");
-                    }
-
+                if (isValid(validKeywords, item) || isValid(validSymbols, item)) {
                     lexiconType = isValid(validKeywords, item) ? "keyword" : "symbol";
-
-                    if (isValid(validVarDecs, item)){
-                        if (codeInfo.subroutineBodyBegin){
-                            codeInfo.subroutineVarDec = true;
-                        }
-                        else{
-                            codeInfo.varDec = true;
-                        }
-                    }
-
-                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch) && !(codeInfo.subroutineDec)){
-                        codeInfo.classDecBegin = true;
-                    }
-
-                    if (!(codeInfo.varDec) && (codeInfo.classVarDec)){
-                        codeInfo.classVarDec = false;
-                    }
-
-                    if ((codeInfo.subroutineVarDec) && !(codeInfo.varExpression)){
-                        if (isValid(validVarDecs, item)){
-                           if (item=="let"){
-                               subroutineVarNode = subroutineStatementsNode.append_child("letStatement");
-                           }
-                       }
-
-                       if (item == ";"){
-                           codeInfo.subroutineVarDec = false;
-                           codeInfo.varExpression = false;
-                       }
-
-                       subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                       if (item == "="){
-                            varExpressionNode = subroutineVarNode.append_child("expression");
-                            codeInfo.varExpression = true;
-                        }
-                       continue;
-                    }
-
-                    if (codeInfo.varExpression){
-                        if (item == ";"){
-                            codeInfo.varExpression = false;
-                            subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                            continue;
-                        }
-                        varExpressionNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                    }
-
-                    std::string temp = "classVarDec" + std::to_string(counter);
-
-                    if (codeInfo.classVarDec && codeInfo.varDecEnd){
-                        codeInfo.varDecEnd = false;
-                        codeInfo.codeSwitch = true;
-                        if (codeInfo.classDecBegin && codeInfo.varDec){
-                            codeInfo.classVarDec = true;
-                            codeInfo.classDecBegin = false;
-                        }
-                        classVarNode = class_node.append_child(temp.c_str());
-                        counter++;
-                    }
-                    else if (codeInfo.classDec && codeInfo.classDecBegin && codeInfo.varDec){
-                        classVarNode = class_node.append_child(temp.c_str());
-                        codeInfo.classVarDec = true;
-                        codeInfo.classDecBegin = false;
-                        counter++;
-                    }
-
-                    if (codeInfo.classDec && (item == "{") && !(codeInfo.codeSwitch) && !(codeInfo.subroutineDec)){
-                        codeInfo.classDecBegin = true;
-                    }
-
-                    if ((codeInfo.classVarDec) && !(codeInfo.subroutineBodyBegin)){
-                        node childNode = classVarNode.append_child(lexiconType.c_str());
-                        childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                    }
-                    else if ((codeInfo.subroutineDec)){
-                        subroutineTypeNode = subroutineNode.append_child(lexiconType.c_str());
-                        auto it = std::find(temp_tokens.begin(), temp_tokens.end(), "(");
-                        if (it != temp_tokens.end()) {
-                            auto index = std::distance(temp_tokens.begin(), it);
-                            auto it2 = std::find(temp_tokens.begin(), temp_tokens.end(), ")");
-                            auto index2 = std::distance(temp_tokens.begin(), it2);
-                            if ((index+1) != index2){
-                                if (item == "("){
-                                    subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                                    parameterNode = subroutineNode.append_child("parameterList");
-                                    codeInfo.parameterDec = true;
-                                    continue;
-                                }
-                                else if ((item == ")") && (codeInfo.parameterDec)){
-                                    node closingChild = subroutineNode.insert_child_after("symbol", parameterNode);
-                                    closingChild.append_child(pugi::node_pcdata).set_value(item.c_str());
-//                                    codeInfo.parameterDec = false;
-                                    continue;
-                                }
-                            }
-                        }
-                        if (codeInfo.parameterDec){
-                            if (item == "{"){
-                                codeInfo.parameterDec = false;
-                                codeInfo.subroutineBodyBegin = true;
-                                subroutineBodyNode = subroutineNode.append_child("subroutineBody");
-                                subroutineBodyNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                                subroutineStatementsNode = subroutineBodyNode.append_child("statements");
-                                continue;
-                            }
-                            else{
-                                parameterNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                            }
-
-                        }
-                        else if (codeInfo.subroutineBodyBegin){
-                                subroutineStatementsNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                        }
-                        else{
-                            subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                        }
-                    }
-                    else{
-                        typeNode = class_node.append_child(lexiconType.c_str());
-                        typeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                    }
+                    tokenNode.append_child(lexiconType.c_str()).text().set(item.c_str());
                 }
                 else{
                     lexiconType = "identifier";
                     if (isNotEmpty(item)) {
-                        if (codeInfo.classVarDec){
-                            node childNode = classVarNode.append_child(lexiconType.c_str());
-                            childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                        }
-                        else if (codeInfo.doStatement){
-                            doStatementNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                        }
-                        else if (codeInfo.subroutineDec){
-                            if (codeInfo.parameterDec){
-                                subroutineTypeNode = parameterNode.append_child(lexiconType.c_str());
-                                subroutineTypeNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                            }
-
-                            else{
-                                node childNode = subroutineNode.append_child(lexiconType.c_str());
-                                childNode.append_child(pugi::node_pcdata).set_value(item.c_str());
-                            }
-                        }
-                        else if (codeInfo.subroutineVarDec){
-                            if (codeInfo.varExpression){
-                                varExpressionNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                            }
-                            else{
-                                subroutineVarNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                            }
-                        }
-                        else{
-                            node type_node = class_node.append_child(lexiconType.c_str());
-                            type_node.append_child(pugi::node_pcdata).set_value(item.c_str());
+                        tokenNode.append_child(lexiconType.c_str()).text().set(item.c_str());
                         }
                     }
                 }
             }
-            if (codeInfo.classVarDec && codeInfo.varDec){
-                codeInfo.varDecEnd = true;
-            }
-            codeInfo.varDec = false;
-            codeInfo.subroutineDec = false;
-            codeInfo.parameterDec = false;
-            codeInfo.subroutineVarDec = false;
-            codeInfo.varExpression = false;
-        }
     }
     xmlDoc.save(std::cout);
 }
@@ -344,6 +144,8 @@ CODE JackTokenizer::getCodeVector(std::string str) {
                 parseFuncParams(str, vec);
                 break;
             }
+
+            idx = str.find(32);
         }
 
         if (item.find(',') != std::string::npos) {
@@ -352,12 +154,7 @@ CODE JackTokenizer::getCodeVector(std::string str) {
         }
 
         if (isNotEmpty(item)) {
-            if (item.find('.') != std::string::npos) {
-                temp2 = item.substr(0, item.find('.'));
-                vec.push_back(temp2);
-                vec.push_back(".");
-                item = item.substr(item.find('.') + 1);
-            }
+
 
             if (item.find(',') != std::string::npos) {
                 splitComma(item, vec);
@@ -370,12 +167,21 @@ CODE JackTokenizer::getCodeVector(std::string str) {
             item = addBrackets(item, vec);
             if (addSemicolon(item, vec) == -1){ break; }
             addCurlyBrackets(item, vec);
-            if (item.empty()){
-                break;
-            }
             str = str.substr(idx + 1);
+            if (str.find('.') !=  std::string::npos){
+                addDot(str, vec);
+                if (str.find('(')){
+                    continue;
+                }
+            }
             if (idx >= str.length()) {
-                addSemicolon(str, vec);
+                if (str == "{"){
+                    addCurlyBrackets(str, vec);
+                    break;
+                }
+                if (!item.empty()){
+                    addSemicolon(str, vec);
+                }
                 break;
             }
         }
@@ -406,7 +212,9 @@ void JackTokenizer::splitComma(std::string& str, std::vector<std::string>& vec){
         }
     }
 
-    for (const auto& k: temp){
+    for (auto k: temp){
+
+        k = addBrackets(k , vec);
         auto idx2 = k.find(',');
         if (idx2 != std::string::npos){
             s2 = k.substr(0, idx2);
@@ -440,8 +248,8 @@ void JackTokenizer::splitComma(std::string& str, std::vector<std::string>& vec){
                     str = str2.substr(item.find_last_of(to_find));
                 }
             }
-       }
-   }
+        }
+    }
 }
 
 std::string JackTokenizer::addBrackets(std::string item, CODE &vec) {
@@ -460,6 +268,11 @@ std::string JackTokenizer::addBrackets(std::string item, CODE &vec) {
             temp2 = temp2.substr(0, temp2.length() - 1);
             vec.push_back(temp2);
         }
+        else if (item.find(')') != std::string::npos){
+            temp2 = item;
+            temp2 = temp2.substr(0, temp2.find(')'));
+            vec.push_back(temp2);
+        }
         vec.push_back(")");
         item = item.substr(item.find(')') + 1);
     }
@@ -474,11 +287,9 @@ int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
         item = item.substr(0, item.find(';'));
     }
 
-    if (item.empty()){
-        return -1;
+    if (item != "}"){
+        vec.push_back(item);
     }
-
-    vec.push_back(item);
 
     if (temp2.ends_with(';') && !(item == ";")) {
         vec.push_back(";");
@@ -497,7 +308,8 @@ int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
 
 int JackTokenizer::addCurlyBrackets(std::string &item, CODE &vec) {
     if (item == "{" || item == "}") {
-         vec.push_back(item);
+        vec.push_back(item);
+        item = "";
     }
     return 0;
 }
@@ -508,4 +320,13 @@ int JackTokenizer::parseFuncParams(std::string &item, CODE &vec) {
     }
     return 0;
 }
-#pragma clang diagnostic pop
+
+void JackTokenizer::addDot(std::string &item, CODE &vec) {
+    std::string temp2;
+    if (item.find('.') != std::string::npos) {
+        temp2 = item.substr(0, item.find('.'));
+        vec.push_back(temp2);
+        vec.push_back(".");
+        item = item.substr(item.find('.') + 1);
+    }
+}
