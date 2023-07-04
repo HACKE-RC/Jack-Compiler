@@ -8,4 +8,6 @@ add_executable(Jack_Lex
         src/JackTokenizer/JackTokenizer.hpp
         src/pugixml/pugixml.cpp
         src/pugixml/pugixml.hpp
-        src/main.cpp src/JackTokenizer/JackTokenizer.cpp)
+        src/main.cpp src/JackTokenizer/JackTokenizer.cpp
+		src/SymbolTable/SymbolTable.cpp
+		src/SymbolTable/SymbolTable.hpp src/CompilationEngine/CompilationEngine.cpp src/CompilationEngine/CompilationEngine.hpp)

@@ -32,15 +32,13 @@ JackTokenizer::JackTokenizer(std::string fName, std::string outfName) {
 
         if (!fStream.good()){
             std::cerr << "ERR: " << "File not found!" << std::endl;
-            std::exit(ERROR_FILE_NOT_FOUND);
+            std::exit(-1);
         }
 
         while (getline(fStream, fData)) {
             m_code.push_back(fData);
         }
     }
-
-
 }
 
 void JackTokenizer::to_lower(std::string &str) {
@@ -72,16 +70,9 @@ void JackTokenizer::cleanCode() {
     this->m_code = tokens;
 }
 
-void JackTokenizer::tokenizeCode() {
-    pugi::xml_document xmlDoc;
-    node tokenNode = xmlDoc.append_child("tokens");
-
+void JackTokenizer::tokenizeAllCode() {
     CODE tokens;
     CODE temp_tokens;
-
-    std::string lexiconType;
-    std::string xmlElement;
-    std::string str;
 
     for (auto &code: m_code) {
         auto tokenNoSpace = std::find_if_not(code.rbegin(), code.rend(), ::isspace).base();
@@ -90,22 +81,12 @@ void JackTokenizer::tokenizeCode() {
         token = tokenNoSpace2;
 
         if (isNotEmpty(token)){
-            temp_tokens = getCodeVector(token);
+            temp_tokens = tokenizeCode(token);
             for (auto &item: temp_tokens){
-                if (isValid(validKeywords, item) || isValid(validSymbols, item)) {
-                    lexiconType = isValid(validKeywords, item) ? "keyword" : "symbol";
-                    tokenNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                }
-                else{
-                    lexiconType = "identifier";
-                    if (isNotEmpty(item)) {
-                        tokenNode.append_child(lexiconType.c_str()).text().set(item.c_str());
-                        }
-                    }
-                }
+                std::cout << item << std::endl;
             }
     }
-    xmlDoc.save(std::cout);
+    }
 }
 
 bool JackTokenizer::isValid(const CODE &vec, std::string &str) {
@@ -126,7 +107,7 @@ bool JackTokenizer::isNotEmpty(std::string& str) {
     return false;
 }
 
-CODE JackTokenizer::getCodeVector(std::string str) {
+CODE JackTokenizer::tokenizeCode(std::string str) {
     CODE vec;
     std::string item;
     std::string temp2;
@@ -329,4 +310,8 @@ void JackTokenizer::addDot(std::string &item, CODE &vec) {
         vec.push_back(".");
         item = item.substr(item.find('.') + 1);
     }
+}
+
+CODE JackTokenizer::getAllCodeVector() {
+    return m_code;
 }
