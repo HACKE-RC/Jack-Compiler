@@ -23,6 +23,11 @@ void SymbolTable::insert(std::string name, std::string type, const std::string& 
         symbolTableEntry.index = kindCount.varCount;
         m_symbolTable[m_count] = symbolTableEntry;
     }
+    else if (kind == "argument"){
+        kindCount.argCount++;
+        symbolTableEntry.index = kindCount.argCount;
+        m_symbolTable[m_count] = symbolTableEntry;
+    }
 
     m_count++;
 }

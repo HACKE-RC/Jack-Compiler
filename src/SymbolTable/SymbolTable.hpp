@@ -14,8 +14,8 @@ public:
     struct KindCount{
         int staticCount = 0;
         int fieldCount = 0;
-//        int argCount = 0;
         int varCount = 0;
+        int argCount = 0;
     } kindCount;
 
 private:

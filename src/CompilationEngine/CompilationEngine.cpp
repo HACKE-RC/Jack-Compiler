@@ -9,24 +9,23 @@ CompilationEngine::CompilationEngine(std::string fName) {
 
     m_currentLine = 0;
 
-    temp_tokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     m_currentLine++;
 
-    if (temp_tokens[0] == "class") {
+    if (tempTokens[0] == "class") {
         compileClass();
     }
 }
 
 void CompilationEngine::compileClass() {
-    temp_tokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     m_currentLine++;
 
-    if (JackTokenizer::isValid(validVarDecs, temp_tokens[0])) {
-        compileClassVarDec(temp_tokens);
-        compileSubroutine();
-//        classSymbolTable.display();
-
+    if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
+        compileClassVarDec(tempTokens);
     }
+
+    compileSubroutine();
 }
 
 
@@ -40,10 +39,10 @@ void CompilationEngine::compileClassVarDec(CODE tokens) {
         }
 
         std::string token = getNthToken(m_currentLine);
-        temp_tokens = JackTokenizer::tokenizeCode(token);
+        tempTokens = JackTokenizer::tokenizeCode(token);
         m_currentLine++;
 
-        compileClassVarDec(temp_tokens);
+        compileClassVarDec(tempTokens);
     }
     else{
         return;
@@ -54,15 +53,12 @@ void CompilationEngine::compileClassVarDec(CODE tokens) {
 
 void CompilationEngine::compileSubroutine() {
 
-    if (JackTokenizer::isValid(validSubroutineDec, temp_tokens[0])) {
-        if (JackTokenizer::isValid(validSubroutineTypes, temp_tokens[1])){
-            if (isValidName(temp_tokens[2])){
+    if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
+        if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
+            if (isValidName(tempTokens[2])){
+                compileParameterList();
                 compileVarDec();
-                classSymbolTable.display();
-                std::cout << " --- " << std::endl << std::endl;
-                subroutineSymbolTable.display();
-                std::cout << " --- " << std::endl << std::endl;
-                std::cout << classSymbolTable.index("field3") << std::endl;
+
             }
         }
     }
@@ -92,16 +88,17 @@ bool CompilationEngine::isValidName(std::string name) {
 }
 
 void CompilationEngine::compileVarDec() {
-    temp_tokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     m_currentLine++;
 
-    if ((temp_tokens[0] == "var") || temp_tokens[0] == "let"){
-        if (isValidName(temp_tokens[1])){
-            subroutineSymbolTable.insert(temp_tokens[2], temp_tokens[1], temp_tokens[0]);
+    if ((tempTokens[0] == "var") || tempTokens[0] == "let"){
+        if (isValidName(tempTokens[1])){
+            subroutineSymbolTable.insert(tempTokens[2], tempTokens[1], tempTokens[0]);
 
             std::string token = getNthToken(m_currentLine);
-            temp_tokens = JackTokenizer::tokenizeCode(token);
+            tempTokens = JackTokenizer::tokenizeCode(token);
             m_currentLine++;
+
             compileVarDec();
         }
         else{
@@ -112,4 +109,41 @@ void CompilationEngine::compileVarDec() {
         return;
     }
 
+}
+
+void CompilationEngine::compileParameterList() {
+    auto index = std::find(tempTokens.begin(), tempTokens.end(), "(");
+    long long paramCount = 0;
+
+    if (index != tempTokens.end()){
+        auto index2 =  std::find(tempTokens.begin(), tempTokens.end(), ")");
+        if ((index2 != tempTokens.end()) && (index + 1 != index2)){
+            auto index3 = std::distance(tempTokens.begin(), index);
+            if (JackTokenizer::isValid(validVarTypes, tempTokens.at(index3+1))){
+                if (isValidName(tempTokens.at(index3+2))){
+                    auto tempTokens2 = tempTokens;
+//                      array slicing
+                        auto start = std::find(tempTokens2.begin(), tempTokens2.end(), "(") + 1;
+                        auto end = std::find(tempTokens2.begin(), tempTokens2.end(), ")");
+
+                        std::vector<std::string> parameters(start, end);
+                        paramCount = countParameters(parameters);
+
+                        for (long long i = 0; i < (paramCount * 3); i+=3) {
+                            subroutineSymbolTable.insert(parameters[i+1], parameters[i], "argument");
+                        }
+                }
+            }
+        }
+
+    }
+
+}
+
+long long CompilationEngine::countParameters(CODE parameterList) {
+    auto count = std::count(parameterList.begin(), parameterList.end(), "int");
+    count += std::count(parameterList.begin(), parameterList.end(), "boolean");
+    count += std::count(parameterList.begin(), parameterList.end(), "bool");
+    count += std::count(parameterList.begin(), parameterList.end(), "char");
+    return count;
 }

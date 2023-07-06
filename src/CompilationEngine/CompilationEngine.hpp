@@ -5,7 +5,7 @@
 #include "../SymbolTable/SymbolTable.hpp"
 
 
-static CODE validVarTypes = {"int", "bool", "char", "boolean"};
+static CODE validVarTypes = {"int", "char", "boolean"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
 
 class CompilationEngine {
@@ -13,7 +13,7 @@ public:
     explicit CompilationEngine(std::string fName);
 
 private:
-    CODE temp_tokens;
+    CODE tempTokens;
 
 
 private:
@@ -27,6 +27,8 @@ private:
     void compileClassVarDec(CODE tokens);
     void compileSubroutine();
     void compileVarDec();
+    void compileParameterList();
+    static long long countParameters(CODE parameterList);
     static bool isValidName(std::string name);
     std::string getNthToken(int n);
 };

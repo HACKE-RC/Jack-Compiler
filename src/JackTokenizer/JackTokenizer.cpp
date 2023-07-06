@@ -170,6 +170,9 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
             str = str.substr(idx + 1);
         }
     }
+
+    vec.erase(std::remove(vec.begin(), vec.end(),""), vec.end());
+
     return vec;
 }
 
