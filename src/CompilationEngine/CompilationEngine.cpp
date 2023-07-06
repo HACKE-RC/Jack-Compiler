@@ -48,7 +48,6 @@ void CompilationEngine::compileClassVarDec(CODE tokens) {
         return;
     }
 
-
 }
 
 void CompilationEngine::compileSubroutine() {
@@ -58,6 +57,7 @@ void CompilationEngine::compileSubroutine() {
             if (isValidName(tempTokens[2])){
                 compileParameterList();
                 compileVarDec();
+                compileSubroutineBody();
 
             }
         }
@@ -89,7 +89,7 @@ bool CompilationEngine::isValidName(std::string name) {
 
 void CompilationEngine::compileVarDec() {
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-    m_currentLine++;
+//    m_currentLine++;
 
     if ((tempTokens[0] == "var") || tempTokens[0] == "let"){
         if (isValidName(tempTokens[1])){
@@ -122,11 +122,7 @@ void CompilationEngine::compileParameterList() {
             if (JackTokenizer::isValid(validVarTypes, tempTokens.at(index3+1))){
                 if (isValidName(tempTokens.at(index3+2))){
                     auto tempTokens2 = tempTokens;
-//                      array slicing
-                        auto start = std::find(tempTokens2.begin(), tempTokens2.end(), "(") + 1;
-                        auto end = std::find(tempTokens2.begin(), tempTokens2.end(), ")");
-
-                        std::vector<std::string> parameters(start, end);
+                        std::vector<std::string> parameters = removeBrackets(tempTokens2);
                         paramCount = countParameters(parameters);
 
                         for (long long i = 0; i < (paramCount * 3); i+=3) {
@@ -135,9 +131,8 @@ void CompilationEngine::compileParameterList() {
                 }
             }
         }
-
     }
-
+    m_currentLine++;
 }
 
 long long CompilationEngine::countParameters(CODE parameterList) {
@@ -146,4 +141,92 @@ long long CompilationEngine::countParameters(CODE parameterList) {
     count += std::count(parameterList.begin(), parameterList.end(), "bool");
     count += std::count(parameterList.begin(), parameterList.end(), "char");
     return count;
+}
+
+void CompilationEngine::compileSubroutineBody() {
+
+    compileVarDec();
+    compileStatement();
+}
+
+void CompilationEngine::compileStatement() {
+    if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
+        if (tempTokens[0] == "do") {
+            compileDo();
+        }
+    }
+}
+
+void CompilationEngine::compileDo() {
+    CODE argumentList = removeBrackets(tempTokens);
+}
+
+CODE CompilationEngine::removeBrackets(CODE code) {
+    auto start = std::find(code.begin(), code.end(), "(") + 1;
+    auto end = std::find(code.begin(), code.end(), ")");
+
+    std::vector<std::string> removed(start, end);
+    return removed;
+}
+
+std::string CompilationEngine::removeBrackets(const std::string& str) {
+    auto start = str.find('(' + 1);
+    if (start == std::string::npos) {
+        return "";
+    }
+    auto end = str.find(')');
+
+    std::string str2 = str.substr(start, end);
+    return str2;
+}
+
+void CompilationEngine::compileExpression(std::string expr) {
+    std::string currentLine = getNthToken(m_currentLine);
+    currentLine = removeBrackets(currentLine);
+    bool isClassVar = false;
+    std::regex expressionRegex(R"(\b([-+]?\d+|[a-zA-Z_]\w*)\s*([+\-*/])\s*([-+]?\d+|[a-zA-Z_]\w*)\b)");
+
+    if (isNumber(expr)){
+        vmCode.push_back("push constant " + expr);
+    }
+    else if ((subroutineSymbolTable.index(expr.c_str()) != -1) || (classSymbolTable.index(expr.c_str()) != -1)){
+        if (subroutineSymbolTable.index(expr.c_str()) != -1){
+            vmCode.push_back("push " + subroutineSymbolTable.kind(expr) + " " + std::to_string(subroutineSymbolTable.index(expr.c_str())));
+        }
+        else if (classSymbolTable.index(expr.c_str()) != -1){
+            vmCode.push_back("push " + classSymbolTable.kind(expr) + " " + std::to_string(classSymbolTable.index(expr.c_str())));
+        }
+    }
+    else if (std::regex_match(expr, expressionRegex)){
+        char character = isCharacterPresent(expr, "+-*/");
+        if (character != ' '){
+            auto index = expr.find(character);
+            std::string alpha = expr.substr(0, index);
+            std::string beta = expr.substr(index + 1);
+
+//            to implement ->
+
+//            switch (character){
+//                case '+':
+//
+//                    break;
+//                default:
+//                    break;
+            }
+        }
+    }
+
+}
+
+bool CompilationEngine::isNumber(std::string &str) {
+    return !str.empty() && str.find_first_not_of("0123456789") == std::string::npos;
+}
+
+char CompilationEngine::isCharacterPresent(const std::string& str1, const std::string& str2) {
+    for (auto c: str2){
+        if (str2.find(c)){
+            return c;
+        }
+    }
+    return ' ';
 }

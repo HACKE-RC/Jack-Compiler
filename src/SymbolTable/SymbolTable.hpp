@@ -31,7 +31,6 @@ private:
 private:
     symbolTable m_symbolTable;
     int m_count = 0;
-//    int
 
 public:
     void insert(std::string name, std::string type, const std::string& kind);
