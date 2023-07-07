@@ -66,6 +66,10 @@ void CompilationEngine::compileSubroutine() {
 
 std::string CompilationEngine::getNthToken(int n) {
     if (JackTokenizer::isNotEmpty(m_code[n])){
+        auto index = m_code[n].find_first_not_of(" ");
+        if (index != std::string::npos){
+            m_code[n] = m_code[n].substr(index);
+        }
         return m_code[n];
     }
     else{
@@ -158,7 +162,8 @@ void CompilationEngine::compileStatement() {
 }
 
 void CompilationEngine::compileDo() {
-    CODE argumentList = removeBrackets(tempTokens);
+//    CODE argumentList = removeBrackets(tempTokens);
+    compileExpressionList();
 }
 
 CODE CompilationEngine::removeBrackets(CODE code) {
@@ -170,13 +175,13 @@ CODE CompilationEngine::removeBrackets(CODE code) {
 }
 
 std::string CompilationEngine::removeBrackets(const std::string& str) {
-    auto start = str.find('(' + 1);
+    auto start = str.find_first_of('(') + 1;
     if (start == std::string::npos) {
         return "";
     }
-    auto end = str.find(')');
+    auto end = str.find_last_of(')');
 
-    std::string str2 = str.substr(start, end);
+    std::string str2(str.begin() + start, str.begin() + end);
     return str2;
 }
 
@@ -212,7 +217,7 @@ void CompilationEngine::compileExpression(std::string expr) {
 //                    break;
 //                default:
 //                    break;
-            }
+//            }
         }
     }
 
@@ -229,4 +234,29 @@ char CompilationEngine::isCharacterPresent(const std::string& str1, const std::s
         }
     }
     return ' ';
+}
+
+void CompilationEngine::compileExpressionList() {
+    std::string currentLine = getNthToken(m_currentLine);
+    std::string exprList = removeBrackets(currentLine);
+
+    CODE exprVec = JackTokenizer::tokenizeCode(exprList);
+
+//    True Separator Search Algorithm
+    std::vector<long long> sepIndex;
+    int k = 0;
+
+    for (auto const &expr: exprVec){
+        if (expr == ","){
+            if (exprVec[k+2] == "," || exprVec[k+2] == ")"){
+            }
+            else{
+                sepIndex.push_back(k);
+            }
+        }
+        k++;
+    }
+    for (auto const &index:  sepIndex){
+            std::cout << index << std::endl;
+    }
 }

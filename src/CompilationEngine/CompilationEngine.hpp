@@ -36,6 +36,7 @@ private:
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
     void compileExpression(std::string expr);
+    void compileExpressionList();
     static bool isValidName(std::string name);
     static long long countParameters(CODE parameterList);
     static std::string removeBrackets(const std::string& str);
