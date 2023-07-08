@@ -96,6 +96,11 @@ bool JackTokenizer::isValid(const CODE &vec, std::string &str) {
     return false;
 }
 
+bool JackTokenizer::isValid(const std::vector<char> &vec, char ch) {
+   std::ranges::any_of(vec, [&](char c) { return c == ch; });
+    return false;
+}
+
 bool JackTokenizer::isNotEmpty(std::string& str) {
     std::string temp = str;
     temp.erase(remove(temp.begin(), temp.end(), ' '), temp.end());

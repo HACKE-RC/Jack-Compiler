@@ -46,6 +46,7 @@ public:
     static int addCurlyBrackets(std::string& item, CODE &vec);
     static CODE tokenizeCode(std::string str);
     static bool isValid(CODE const& vec, std::string& str);
+    static bool isValid(const std::vector<char> &vec, char ch);
     static bool isNotEmpty(std::string& str);
 
 private:

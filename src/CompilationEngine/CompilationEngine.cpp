@@ -186,10 +186,6 @@ std::string CompilationEngine::removeBrackets(const std::string& str) {
 }
 
 void CompilationEngine::compileExpression(std::string expr) {
-    std::string currentLine = getNthToken(m_currentLine);
-    currentLine = removeBrackets(currentLine);
-    bool isClassVar = false;
-    std::regex expressionRegex(R"(\b([-+]?\d+|[a-zA-Z_]\w*)\s*([+\-*/])\s*([-+]?\d+|[a-zA-Z_]\w*)\b)");
 
     if (isNumber(expr)){
         vmCode.push_back("push constant " + expr);
@@ -243,7 +239,7 @@ void CompilationEngine::compileExpressionList() {
     CODE exprVec = JackTokenizer::tokenizeCode(exprList);
 
 //    True Separator Search Algorithm
-    std::vector<long long> sepIndex;
+    std::vector<int> sepIndex;
     int k = 0;
 
     for (auto const &expr: exprVec){
@@ -256,7 +252,39 @@ void CompilationEngine::compileExpressionList() {
         }
         k++;
     }
-    for (auto const &index:  sepIndex){
-            std::cout << index << std::endl;
+
+    int start = 0;
+    int j = 0;
+    for (auto index: sepIndex){
+        index = sepIndex[j];
+
+        auto startIt = exprVec.begin() + start;
+        auto endIt = exprVec.begin() + index;
+
+        std::string expression = std::accumulate(startIt, endIt, std::string(""));
+        compileExpression(expression);
+
+        start = index + 1;
+        j++;
     }
+}
+
+void CompilationEngine::compileTerm(std::string &term) {
+    if (isNumber(term)){
+        vmCode.push_back("push constant " + term);
+    }
+    else if ((subroutineSymbolTable.index(term.c_str()) != -1) || (classSymbolTable.index(term.c_str()) != -1)){
+        if (subroutineSymbolTable.index(term.c_str()) != -1){
+            vmCode.push_back("push " + subroutineSymbolTable.kind(term) + " " + std::to_string(subroutineSymbolTable.index(term.c_str())));
+        }
+        else if (classSymbolTable.index(term.c_str()) != -1){
+            vmCode.push_back("push " + classSymbolTable.kind(term) + " " + std::to_string(classSymbolTable.index(term.c_str())));
+        }
+    }
+    else if ((term.starts_with('(')) && (term.ends_with(')'))){
+        compileExpression(term);
+    }
+//    else if (JackTokenizer::isValid(validOperations, term.at(0))){
+//        compileTerm(term);
+//    }
 }
