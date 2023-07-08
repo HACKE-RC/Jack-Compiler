@@ -1,4 +1,5 @@
 #include "JackTokenizer.hpp"
+#include "../CompilationEngine/CompilationEngine.hpp"
 
 JackTokenizer::JackTokenizer(std::string fName, std::string outfName) {
     CODE code;
@@ -276,7 +277,11 @@ int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
         item = item.substr(0, item.find(';'));
     }
 
-    if (item != "}"){
+    if ((item != "}") && (item.find('+') == std::string::npos) && (item.find('-') == std::string::npos) && (item.find('/') == std::string::npos) && (item.find('*') == std::string::npos)){
+        vec.push_back(item);
+    }
+
+    if (isValid(validOperations, item)){
         vec.push_back(item);
     }
 

@@ -63,6 +63,9 @@ int SymbolTable::count(const std::string& kind) const {
     else if (kind=="var"){
         return kindCount.varCount;
     }
+    else if (kind=="argument"){
+        return kindCount.argCount;
+    }
 
     return 0;
 }
@@ -83,7 +86,7 @@ void SymbolTable::reset() {
     m_count = 0;
     kindCount.staticCount = 0;
     kindCount.fieldCount = 0;
-//    kindCount.argCount = 0;
+    kindCount.argCount = 0;
     kindCount.varCount = 0;
 }
 
