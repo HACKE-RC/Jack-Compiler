@@ -52,7 +52,6 @@ void CompilationEngine::compileSubroutine() {
 
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
-            m_isSubroutine = true;
             if (isValidName(tempTokens[2])){
                 compileParameterList();
                 compileVarDec();
@@ -60,7 +59,6 @@ void CompilationEngine::compileSubroutine() {
             }
         }
     }
-    m_isSubroutine  = false;
 }
 
 std::string CompilationEngine::getNthToken(int n) {
@@ -150,7 +148,6 @@ void CompilationEngine::compileParameterList() {
             }
         }
     }
-//    m_currentLine++;
 }
 
 long long CompilationEngine::countParameters(CODE parameterList) {
@@ -177,11 +174,11 @@ void CompilationEngine::compileStatement() {
 void CompilationEngine::compileDo() {
     compileExpressionList();
 
-     for (auto &i : vmCode){
-         std::cout << i << std::endl;
-     }
-     classSymbolTable.display();
-     subroutineSymbolTable.display();
+//     for (auto &i : vmCode){
+//         std::cout << i << std::endl;
+//     }
+//     classSymbolTable.display();
+//     subroutineSymbolTable.display();
 }
 
 CODE CompilationEngine::removeBrackets(CODE code) {
@@ -205,15 +202,17 @@ std::string CompilationEngine::removeBrackets(const std::string& str) {
 
 void CompilationEngine::compileExpression(std::string& expr) {
     CODE exprVec;
+    prioritizeBrackets(expr);
     exprVec = getExpressionVector(expr);
 
-   compileTerm(exprVec[0]);
-   if (exprVec.size()  > 1){
-      int n = 1;
-      while(JackTokenizer::isValid(validOperations, exprVec[n])){
-         compileExpression(exprVec[n+1]);
+    compileTerm(exprVec[0]);
 
-         if (exprVec[n] == "+"){
+    if (exprVec.size() > 1){
+        int n = 1;
+        while(JackTokenizer::isValid(validOperations, exprVec[n])){
+            compileExpression(exprVec[n+1]);
+
+            if (exprVec[n] == "+"){
              vmCode.push_back("add");
           }
          else if (exprVec[n] == "-"){
@@ -254,8 +253,9 @@ void CompilationEngine::compileExpressionList() {
     std::string currentLine = getNthToken(m_currentLine);
     std::string exprList = removeBrackets(currentLine);
 
+    prioritizeBrackets(exprList);
     CODE exprVec = JackTokenizer::tokenizeCode(exprList);
-
+//    getExpressionVector(exprL);
 //    True Separator Search Algorithm
     std::vector<int> sepIndex;
     int k = 0;
@@ -385,4 +385,80 @@ std::string CompilationEngine::clearName(std::string name) {
     }
 
     return name;
+}
+
+std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
+    CODE expressionVec = splitString(expression, ',');
+    std::string temp;
+
+    expressionVec = splitString(expression, ',');
+
+    int k = 0;
+    for (auto &expr: expressionVec){
+        if ((expr.find('(') != std::string::npos) && (expr.find(')') != std::string::npos)){
+            expr.erase(std::remove_if(expr.begin(), expr.end(), ::isspace), expr.end());
+            auto idx1 = expr.find_first_of('(');
+            auto idx2 = expr.find_first_of(')');
+
+            std::string transformed;
+            std::string op;
+            std::string oldStart;
+
+            transformed = expr.substr(idx1 + 1, (idx2 - idx1)-1);
+            op = expr.substr(idx1-1, 1);
+            oldStart = expr.substr(0,  expr.length() - idx2);
+
+            transformed.append(op);
+            transformed.append(oldStart);
+        }
+        }
+
+    return std::string();
+}
+
+std::vector<std::string> CompilationEngine::splitString(std::string &str, char delim) {
+//    Split string through True Separator Search Algorithm
+    std::vector<int> sepIndex;
+    std::vector<std::string> splitVec;
+    int k = 0;
+    int start = 0;
+
+    std::string split;
+
+    for (char ch: str){
+        if (ch == delim){
+            sepIndex.push_back(k);
+        }
+        k++;
+    }
+
+    sepIndex.push_back(-1);
+    std::string splitStr;
+
+    for (int j = 0; j < (sepIndex.size() + 1); j++) {
+        auto index = sepIndex[j];
+
+        if (index >= 0) {
+            std::string::iterator startIt = str.begin() + start;
+            std::string::iterator endIt = str.begin() + index;
+
+            try{
+                splitStr.clear();
+                splitStr = std::string(startIt, endIt);
+                splitVec.push_back(splitStr);
+            }
+            catch (const std::exception& e){
+                break;
+            }
+            start = index + 1;
+        }
+        else{
+            splitStr = std::string(str.begin() + start, str.end());
+            splitStr = clearName(splitStr);
+            splitVec.push_back(splitStr);
+            break;
+        }
+    }
+    return splitVec;
+    //    return splitStr;
 }

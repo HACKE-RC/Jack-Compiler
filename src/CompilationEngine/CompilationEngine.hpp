@@ -24,9 +24,7 @@ private:
     CODE m_code;
     SymbolTable classSymbolTable;
     SymbolTable subroutineSymbolTable;
-    // DO: change "var" to local or whatever the appropriate segment
     int m_currentLine;
-    bool m_isSubroutine = false;
 
 private:
     void compileDo();
@@ -45,10 +43,11 @@ private:
     static bool isNumber(std::string &str);
     void compileExpression(std::string &expr);
     static bool isValidName(std::string name);
+    static std::string clearName(std::string name);
     static CODE getExpressionVector(std::string& expr);
     static long long countParameters(CODE parameterList);
+    std::string prioritizeBrackets(std::string& expression);
     static std::string removeBrackets(const std::string& str);
+    static std::vector<std::string> splitString(std::string &str, char delim);
     static char isCharacterPresent(const std::string &str, const std::string &str2);
-    static std::string clearName(std::string name);
 };
-
