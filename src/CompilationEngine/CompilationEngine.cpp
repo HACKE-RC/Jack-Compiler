@@ -406,7 +406,7 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
 
             transformed = expr.substr(idx1 + 1, (idx2 - idx1)-1);
             op = expr.substr(idx1-1, 1);
-            oldStart = expr.substr(0,  expr.length() - idx2);
+            oldStart = expr.substr(0,  idx1 - 1);
 
             transformed.append(op);
             transformed.append(oldStart);
