@@ -211,25 +211,23 @@ void CompilationEngine::compileExpression(std::string& expr) {
    if (exprVec.size()  > 1){
       int n = 1;
       while(JackTokenizer::isValid(validOperations, exprVec[n])){
-          compileTerm(exprVec[n+1]);
+         compileExpression(exprVec[n+1]);
 
-          if (exprVec[n] == "+"){
+         if (exprVec[n] == "+"){
              vmCode.push_back("add");
           }
-          else if (exprVec[n] == "-"){
+         else if (exprVec[n] == "-"){
               vmCode.push_back("sub");
           }
-          else if (exprVec[n] == "*"){
+         else if (exprVec[n] == "*"){
               vmCode.push_back("call Math.multiply 2");
           }
-          else if (exprVec[n] == "/"){
+         else if (exprVec[n] == "/"){
               vmCode.push_back("call Math.divide 2");
           }
-          n++;
+         n += 2;
       }
    }
-
-
 }
 
 bool CompilationEngine::isNumber(std::string &str) {
@@ -353,14 +351,11 @@ CODE CompilationEngine::getExpressionVector(std::string &expr) {
 
     for (int index : sepIndex){
         if (index != -1){
-            auto startIt = expr.begin() + start;
-            auto endIt = expr.begin() + index;
 
-            expression = expr.substr(start, index);
+            expression = expr.substr(start, index - start);
             op = expr.substr(index,1);
         }
         else{
-            auto startIt = expr.begin() + start;
             expression = expr.substr(start, expr.length());
         }
 
@@ -381,12 +376,13 @@ CODE CompilationEngine::getExpressionVector(std::string &expr) {
 std::string CompilationEngine::clearName(std::string name) {
     size_t spaceStart = name.find_first_not_of(' ');
     size_t spaceEnd = name.find_last_not_of(' ');
+
     if (spaceStart != std::string::npos && spaceEnd != std::string::npos) {
         name =  name.substr(spaceStart, spaceEnd - spaceStart + 1);
         if (name.ends_with(";")) {
             name.pop_back();
-//            return name;
         }
     }
+
     return name;
 }
