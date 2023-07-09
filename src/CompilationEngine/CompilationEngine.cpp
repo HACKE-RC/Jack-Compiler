@@ -52,6 +52,7 @@ void CompilationEngine::compileSubroutine() {
 
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
+            m_isSubroutine = true;
             if (isValidName(tempTokens[2])){
                 compileParameterList();
                 compileVarDec();
@@ -59,11 +60,12 @@ void CompilationEngine::compileSubroutine() {
             }
         }
     }
+    m_isSubroutine  = false;
 }
 
 std::string CompilationEngine::getNthToken(int n) {
     if (JackTokenizer::isNotEmpty(m_code[n])){
-        auto index = m_code[n].find_first_not_of(" ");
+        auto index = m_code[n].find_first_not_of(' ');
         if (index != std::string::npos){
             m_code[n] = m_code[n].substr(index);
         }
@@ -102,7 +104,13 @@ void CompilationEngine::compileVarDec() {
     if ((tempTokens[0] == "var") || tempTokens[0] == "let"){
         if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
             if (isValidName(clearName(tempTokens[2]))) {
-                subroutineSymbolTable.insert(clearName(tempTokens[2]), tempTokens[1], tempTokens[0]);
+                auto kind = tempTokens[0];
+
+                if (kind == "var"){
+                    kind = "local";
+                }
+
+                subroutineSymbolTable.insert(clearName(tempTokens[2]), tempTokens[1], kind);
 
                 std::string token = getNthToken(m_currentLine);
                 tempTokens = JackTokenizer::tokenizeCode(token);

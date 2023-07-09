@@ -26,6 +26,7 @@ private:
     SymbolTable subroutineSymbolTable;
     // DO: change "var" to local or whatever the appropriate segment
     int m_currentLine;
+    bool m_isSubroutine = false;
 
 private:
     void compileDo();

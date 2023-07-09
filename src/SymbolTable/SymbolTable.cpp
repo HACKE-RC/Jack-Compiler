@@ -18,7 +18,7 @@ void SymbolTable::insert(std::string name, std::string type, const std::string& 
         symbolTableEntry.index = kindCount.fieldCount;
         m_symbolTable[m_count] = symbolTableEntry;
     }
-    else if (kind == "var"){
+    else if (kind == "var" || kind == "local"){
         kindCount.varCount++;
         symbolTableEntry.index = kindCount.varCount;
         m_symbolTable[m_count] = symbolTableEntry;
@@ -60,7 +60,7 @@ int SymbolTable::count(const std::string& kind) const {
     else if (kind=="field"){
         return kindCount.fieldCount;
     }
-    else if (kind=="var"){
+    else if (kind=="local" || kind=="var"){
         return kindCount.varCount;
     }
     else if (kind=="argument"){
