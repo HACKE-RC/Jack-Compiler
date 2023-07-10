@@ -57,8 +57,8 @@ void JackTokenizer::cleanCode() {
     std::string tok;
 
     for (const auto& token: this->m_code){
-        if (token.starts_with("/") || token.empty()) {continue;}
-        auto slash_idx = token.find("/");
+        if (token.starts_with("//") || token.empty()) {continue;}
+        auto slash_idx = token.find("//");
 
         if (slash_idx != std::string::npos){
             tok = token.substr(0, slash_idx);
@@ -127,6 +127,7 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
         if ((item.find('(') != std::string::npos)){
             idx = str.find('(');
             auto idx2 = str.find(')');
+
             if ((idx+1 != idx2)){
                 parseFuncParams(str, vec);
                 break;
@@ -142,7 +143,6 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
 
         if (isNotEmpty(item)) {
 
-
             if (item.find(',') != std::string::npos) {
                 splitComma(item, vec);
             }
@@ -151,9 +151,13 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
                 item = str.substr(idx);
                 item = item.substr(item.find_first_not_of(' '));
             }
+
             item = addBrackets(item, vec);
+
             if (addSemicolon(item, vec) == -1){ break; }
+
             addCurlyBrackets(item, vec);
+
             str = str.substr(idx + 1);
             if (str.find('.') !=  std::string::npos){
                 addDot(str, vec);
@@ -161,6 +165,7 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
                     continue;
                 }
             }
+
             if (idx >= str.length()) {
                 if (str == "{"){
                     addCurlyBrackets(str, vec);

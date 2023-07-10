@@ -253,10 +253,14 @@ void CompilationEngine::compileExpressionList() {
     std::string currentLine = getNthToken(m_currentLine);
     std::string exprList = removeBrackets(currentLine);
 
-    prioritizeBrackets(exprList);
-    CODE exprVec = JackTokenizer::tokenizeCode(exprList);
-//    getExpressionVector(exprL);
-//    True Separator Search Algorithm
+    exprList = prioritizeBrackets(exprList);
+    CODE exprVec;
+
+    for (char ch: exprList){
+        std::string temp = {ch};
+        exprVec.push_back(temp);
+    }
+
     std::vector<int> sepIndex;
     int k = 0;
 
@@ -388,14 +392,13 @@ std::string CompilationEngine::clearName(std::string name) {
 }
 
 std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
-    CODE expressionVec = splitString(expression, ',');
+    CODE expressionVec;
     std::string temp;
 
     expressionVec = splitString(expression, ',');
 
-    int k = 0;
-    for (auto &expr: expressionVec){
-        if ((expr.find('(') != std::string::npos) && (expr.find(')') != std::string::npos)){
+    for (auto &expr: expressionVec) {
+        if ((expr.find('(') != std::string::npos) && (expr.find(')') != std::string::npos)) {
             expr.erase(std::remove_if(expr.begin(), expr.end(), ::isspace), expr.end());
             auto idx1 = expr.find_first_of('(');
             auto idx2 = expr.find_first_of(')');
@@ -404,16 +407,43 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
             std::string op;
             std::string oldStart;
 
-            transformed = expr.substr(idx1 + 1, (idx2 - idx1)-1);
-            op = expr.substr(idx1-1, 1);
-            oldStart = expr.substr(0,  idx1 - 1);
 
-            transformed.append(op);
+            transformed = expr.substr(idx1 + 1, (idx2 - idx1) - 1);
+            op = expr.substr(idx1 - 1, 1);
+            oldStart = expr.substr(0, idx1 - 1);
+
+            if (op == "-") {
+                transformed = op + transformed;
+            } else {
+                transformed.append(op);
+            }
+
+            if (oldStart[0] == '-') {
+                if (op == "+") {
+                    oldStart[0] = '-';
+                } else if (op == "-") {
+                    oldStart[0] = '+';
+                } else {
+                    oldStart = "(" + oldStart + ")";
+                }
+            }
+
             transformed.append(oldStart);
-        }
-        }
 
-    return std::string();
+            while (transformed.find('(') != std::string::npos) {
+                transformed = prioritizeBrackets(transformed);
+            }
+
+            if (expr != expressionVec.back()) {
+                temp.append(transformed + ",");
+            } else {
+                temp.append(transformed);
+            }
+        } else {
+            temp.append(expr + ",");
+        }
+    }
+    return temp;
 }
 
 std::vector<std::string> CompilationEngine::splitString(std::string &str, char delim) {
