@@ -173,10 +173,11 @@ void CompilationEngine::compileStatement() {
 
 void CompilationEngine::compileDo() {
     compileExpressionList();
+    callSubroutine(getNthToken(m_currentLine));
 
-//     for (auto &i : vmCode){
-//         std::cout << i << std::endl;
-//     }
+     for (auto &i : vmCode){
+         std::cout << i << std::endl;
+     }
 //     classSymbolTable.display();
 //     subroutineSymbolTable.display();
 }
@@ -285,6 +286,7 @@ void CompilationEngine::compileExpressionList() {
         if (index >= 0) {
             std::vector<std::string>::iterator startIt = exprVec.begin() + start;
             std::vector<std::string>::iterator endIt = exprVec.begin() + index;
+
             try{
                 expression.clear();
                 for (auto it = startIt; it != endIt; ++it) {
@@ -298,8 +300,10 @@ void CompilationEngine::compileExpressionList() {
             if (index != -1) {
                 break;
             }
+
             auto startIt = exprVec.begin() + start;
             expression.clear();
+
             for (auto it = startIt; it != exprVec.end(); ++it) {
                 expression+= *it;
             }
@@ -490,5 +494,13 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
         }
     }
     return splitVec;
-    //    return splitStr;
+}
+
+void CompilationEngine::callSubroutine(std::string line) {
+    CODE lineVec = splitString(line, ' ');
+    std::string funcName;
+    funcName = lineVec[1];
+    funcName = lineVec[1].substr(0,  funcName.find('('));
+
+    vmCode.push_back("call " + funcName);
 }

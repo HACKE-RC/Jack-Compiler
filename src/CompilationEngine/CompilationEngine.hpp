@@ -41,6 +41,7 @@ private:
     void compileClassVarDec(CODE tokens);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
+    void callSubroutine(std::string line);
     void compileExpression(std::string &expr);
     static bool isValidName(std::string name);
     static std::string clearName(std::string name);
