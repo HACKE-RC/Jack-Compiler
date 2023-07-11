@@ -10,7 +10,8 @@
 static CODE validVarTypes = {"int", "char", "boolean"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
 static CODE validStatementInitials = {"var", "let", "do", "if", "else", "while", "return"};
-static std::vector<char> validInt = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+static std::vector<char> validPositiveInt = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+static std::vector<std::string> validNegativeInt = {"-1", "-2", "-3", "-4", "-5", "6", "7", "8", "9"};
 
 class CompilationEngine {
 public:
@@ -28,6 +29,7 @@ private:
 
 private:
     void compileDo();
+    void compileLet();
     void compileClass();
     void compileVarDec();
     void compileStatement();
@@ -45,7 +47,7 @@ private:
     void compileExpression(std::string &expr);
     static bool isValidName(std::string name);
     static std::string clearName(std::string name);
-    static CODE getExpressionVector(std::string& expr);
+    static CODE getExpressionVector(std::string expr);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     static std::string removeBrackets(const std::string& str);

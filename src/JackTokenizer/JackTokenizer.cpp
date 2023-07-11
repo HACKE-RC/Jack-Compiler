@@ -55,9 +55,40 @@ void JackTokenizer::printCode() {
 void JackTokenizer::cleanCode() {
     CODE tokens;
     std::string tok;
+    bool skip = false;
 
-    for (const auto& token: this->m_code){
+    for (auto& token: this->m_code){
+        if (token.find(' ') != std::string::npos){
+            auto idx = token.find_first_not_of(' ');
+//            auto idx2 = token.find_first_of(' ');
+
+
+            if (idx!=std::string::npos){
+                token = token.substr(idx);
+            }
+            else{
+                continue;
+            }
+
+            //            if (token.empty())
+        }
+
         if (token.starts_with("//") || token.empty()) {continue;}
+
+        if (token.starts_with("/**") ) {
+            skip = true;
+            continue;
+        }
+
+        if (token.starts_with("*/")){
+            skip = false;
+            continue;
+        }
+
+        if (skip){
+            continue;
+        }
+
         auto slash_idx = token.find("//");
 
         if (slash_idx != std::string::npos){
