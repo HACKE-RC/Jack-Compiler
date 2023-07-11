@@ -67,6 +67,10 @@ void CompilationEngine::compileSubroutine() {
             }
         }
     }
+
+    for (auto &i : vmCode){
+        std::cout << i << std::endl;
+    }
 }
 
 std::string CompilationEngine::getNthToken(int n) {
@@ -180,7 +184,8 @@ void CompilationEngine::compileSubroutineBody() {
     while(getNthToken(m_currentLine) != "return;"){
         compileStatement();
         std::string s = getNthToken(m_currentLine);
-        m_currentLine++;
+        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+//        m_currentLine++;
     }
 }
 
@@ -202,13 +207,9 @@ void CompilationEngine::compileDo() {
     compileExpressionList();
     callSubroutine(getNthToken(m_currentLine));
 
-     for (auto &i : vmCode){
-         std::cout << i << std::endl;
-     }
 
-//    m_currentLine++;
-//     classSymbolTable.display();
-//     subroutineSymbolTable.display();
+
+    m_currentLine++;
 }
 
 CODE CompilationEngine::removeBrackets(CODE code) {
@@ -543,8 +544,14 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
 void CompilationEngine::callSubroutine(std::string line) {
     CODE lineVec = splitString(line, ' ');
     std::string funcName;
-    funcName = lineVec[1];
-    funcName = lineVec[1].substr(0,  funcName.find('('));
+
+    if (lineVec[0] == "do"){
+        funcName = lineVec[1];
+        funcName = lineVec[1].substr(0,  funcName.find('('));
+    }
+    else{
+        funcName = lineVec[0].substr(0, lineVec[0].find('('));
+    }
 
     vmCode.push_back("call " + funcName);
 }
@@ -557,4 +564,7 @@ void CompilationEngine::compileLet() {
 
     compileExpressionList();
     callSubroutine(tempTokens[3]);
+    m_currentLine++;
+
+//    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 }
