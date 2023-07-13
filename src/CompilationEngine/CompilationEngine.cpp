@@ -62,7 +62,6 @@ void CompilationEngine::compileSubroutine() {
             if (isValidName(tempTokens[2])){
                 compileParameterList();
                 m_currentLine++;
-//                compileVarDec();
                 compileSubroutineBody();
             }
         }
@@ -181,12 +180,13 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
-    while(getNthToken(m_currentLine) != "return;"){
+    while(!(getNthToken(m_currentLine).starts_with("return"))){
         compileStatement();
         std::string s = getNthToken(m_currentLine);
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 //        m_currentLine++;
     }
+    compileReturn();
 }
 
 void CompilationEngine::compileStatement() {
@@ -514,6 +514,11 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
     sepIndex.push_back(-1);
     std::string splitStr;
 
+    if (sepIndex.size() == 1){
+        splitVec.push_back(str);
+        return splitVec;
+    }
+
     for (int j = 0; j < (sepIndex.size() + 1); j++) {
         auto index = sepIndex[j];
 
@@ -566,5 +571,24 @@ void CompilationEngine::compileLet() {
     callSubroutine(tempTokens[3]);
     m_currentLine++;
 
-//    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+}
+
+void CompilationEngine::compileReturn() {
+    std::string currentLine = getNthToken(m_currentLine);
+    tempTokens = splitString(currentLine, ' ');
+    m_currentLine++;
+
+    if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
+        vmCode.push_back("push constant 0");
+        vmCode.push_back("return");
+    }
+    else{
+        std::string expression;
+        auto semiIndex = std::find(tempTokens.begin(), tempTokens.end(), ";");
+
+        expression = currentLine.substr(7);
+        expression = clearName(expression);
+        compileExpression(expression);
+        vmCode.push_back("return");
+    }
 }

@@ -19,6 +19,11 @@ public:
     CODE vmCode = {};
 
 private:
+    bool insideClass = false;
+    bool insideWhile = false;
+    bool insideIf = false;
+
+private:
     CODE tempTokens;
 
 private:
@@ -31,6 +36,7 @@ private:
     void compileDo();
     void compileLet();
     void compileClass();
+    void compileReturn();
     void compileVarDec();
     void compileStatement();
     void compileSubroutine();
