@@ -60,8 +60,6 @@ void JackTokenizer::cleanCode() {
     for (auto& token: this->m_code){
         if (token.find(' ') != std::string::npos){
             auto idx = token.find_first_not_of(' ');
-//            auto idx2 = token.find_first_of(' ');
-
 
             if (idx!=std::string::npos){
                 token = token.substr(idx);
@@ -70,7 +68,6 @@ void JackTokenizer::cleanCode() {
                 continue;
             }
 
-            //            if (token.empty())
         }
 
         if (token.starts_with("//") || token.empty()) {continue;}
@@ -80,7 +77,7 @@ void JackTokenizer::cleanCode() {
             continue;
         }
 
-        if (token.starts_with("*/")){
+        if ((token.starts_with("*/")) || (token.ends_with("*/"))){
             skip = false;
             continue;
         }

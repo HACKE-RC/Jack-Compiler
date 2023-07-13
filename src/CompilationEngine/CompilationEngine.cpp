@@ -26,9 +26,10 @@ void CompilationEngine::compileClass() {
     if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
         compileClassVarDec(tempTokens);
     }
-//    else{
-//        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-//    }
+
+    if (tempTokens.back() == "{"){
+        insideClass = true;
+    }
 
     compileSubroutine();
 }
@@ -56,10 +57,18 @@ void CompilationEngine::compileClassVarDec(CODE tokens) {
 }
 
 void CompilationEngine::compileSubroutine() {
+    subroutineSymbolTable.display();
+    subroutineSymbolTable.reset();
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
             if (isValidName(tempTokens[2])){
+
+                if (tempTokens.back() == "{"){
+                    insideSubroutine = true;
+                }
+
                 compileParameterList();
                 m_currentLine++;
                 compileSubroutineBody();
@@ -67,9 +76,7 @@ void CompilationEngine::compileSubroutine() {
         }
     }
 
-    for (auto &i : vmCode){
-        std::cout << i << std::endl;
-    }
+
 }
 
 std::string CompilationEngine::getNthToken(int n) {
@@ -82,6 +89,10 @@ std::string CompilationEngine::getNthToken(int n) {
             str = m_code[n];
             str.erase(std::remove(str.begin(), str.end(), '\t'), str.end());
             str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+        }
+        if (str.empty()){
+            m_currentLine++;
+            return getNthToken(n+1);
         }
         return str;
     }
@@ -113,25 +124,40 @@ bool CompilationEngine::isValidName(std::string name) {
 }
 
 void CompilationEngine::compileVarDec() {
-    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    std::string currentLine = getNthToken(m_currentLine);
+    currentLine = currentLine.substr(currentLine.find_first_not_of(' '));
+    tempTokens = splitString(currentLine, ' ');
+
 
     if ((tempTokens[0] == "var")){
         if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
-            if (isValidName(clearName(tempTokens[2]))) {
-                auto kind = tempTokens[0];
+            std::string variables = currentLine.substr(currentLine.find(tempTokens[2]));
+            variables = clearName(variables);
+            variables.erase(std::remove(variables.begin(), variables.end(), ' '), variables.end());
 
-                if (kind == "var"){
-                    kind = "local";
+            CODE variableVector;
+            variableVector = splitString(variables, ',');
+
+            int i = 0;
+            for (auto &variable: variableVector){
+                std::string name = variableVector[i];
+
+                if (isValidName(clearName(name))) {
+                    auto kind = tempTokens[0];
+
+                    if (kind == "var"){
+                        kind = "local";
+                    }
+
+                    subroutineSymbolTable.insert(clearName(name), tempTokens[1], kind);
+                    i++;
                 }
-
-                subroutineSymbolTable.insert(clearName(tempTokens[2]), tempTokens[1], kind);
-
-                std::string token = getNthToken(m_currentLine);
-                tempTokens = JackTokenizer::tokenizeCode(token);
-                m_currentLine++;
-
-                compileVarDec();
             }
+            m_currentLine++;
+            std::string token = getNthToken(m_currentLine);
+            tempTokens = JackTokenizer::tokenizeCode(token);
+
+            compileVarDec();
         }
         else{
             return;
@@ -182,11 +208,25 @@ void CompilationEngine::compileSubroutineBody() {
 
     while(!(getNthToken(m_currentLine).starts_with("return"))){
         compileStatement();
-        std::string s = getNthToken(m_currentLine);
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-//        m_currentLine++;
     }
     compileReturn();
+
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+
+    if (tempTokens.back() == "}"){
+        insideSubroutine = false;
+    }
+
+    for (auto &i : vmCode){
+        std::cout << i << std::endl;
+    }
+    std::cout << "----" << std::endl;
+
+
+    m_currentLine++;
+
+    compileSubroutine();
 }
 
 void CompilationEngine::compileStatement() {
@@ -204,10 +244,8 @@ void CompilationEngine::compileStatement() {
 }
 
 void CompilationEngine::compileDo() {
-    compileExpressionList();
+    compileExpressionList(getNthToken(m_currentLine));
     callSubroutine(getNthToken(m_currentLine));
-
-
 
     m_currentLine++;
 }
@@ -221,11 +259,12 @@ CODE CompilationEngine::removeBrackets(CODE code) {
 }
 
 std::string CompilationEngine::removeBrackets(const std::string& str) {
-    auto start = str.find_first_of('(') + 1;
+    auto start = str.find_first_of('(');
 
     if (start == std::string::npos) {
-        return "";
+        return str;
     }
+    start = start+1;
 
     auto end = str.find_last_of(')');
 
@@ -283,9 +322,8 @@ char CompilationEngine::isCharacterPresent(const std::string& str1, const std::s
     return ' ';
 }
 
-void CompilationEngine::compileExpressionList() {
-    std::string currentLine = getNthToken(m_currentLine);
-    std::string exprList = removeBrackets(currentLine);
+void CompilationEngine::compileExpressionList(std::string expressions) {
+    std::string exprList = removeBrackets(expressions);
 
     if (exprList == ""){
         return;
@@ -379,6 +417,10 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     std::vector<int> sepIndex;
     int k = 0;
 
+    if (expr.length() == 1){
+        exprVec.push_back(expr);
+    }
+
     expr.erase(std::remove(expr.begin(), expr.end(), ' '), expr.end());
 
     for (char expression: expr){
@@ -391,7 +433,9 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     sepIndex.push_back(-1);
 
     if (sepIndex.size() == 2){
-        exprVec.push_back(clearName(expr));
+        for (auto &ch: expr){
+            exprVec.push_back({ch});
+        }
         return exprVec;
     }
 
@@ -529,6 +573,11 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
             try{
                 splitStr.clear();
                 splitStr = std::string(startIt, endIt);
+                if ((splitStr.empty()) || splitStr == " "){
+                    continue;
+                }
+                splitStr.erase(0, splitStr.find_first_not_of(' '));
+                splitStr.erase(splitStr.find_last_not_of(' ') + 1);
                 splitVec.push_back(splitStr);
             }
             catch (const std::exception& e){
@@ -539,6 +588,9 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
         else{
             splitStr = std::string(str.begin() + start, str.end());
             splitStr = clearName(splitStr);
+            if ((splitStr.empty()) || splitStr == " "){
+                    continue;
+            }
             splitVec.push_back(splitStr);
             break;
         }
@@ -564,13 +616,35 @@ void CompilationEngine::callSubroutine(std::string line) {
 void CompilationEngine::compileLet() {
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
+    tempTokens.erase(std::remove(tempTokens.begin(), tempTokens.end(), " "), tempTokens.end());
+    tempTokens.erase(std::remove(tempTokens.begin(), tempTokens.end(), ""), tempTokens.end());
 
     std::string varName = tempTokens[1];
 
-    compileExpressionList();
-    callSubroutine(tempTokens[3]);
-    m_currentLine++;
+    std::string value;
+    value = currentLine.substr(currentLine.find(tempTokens[3]));
+    value.erase(0, value.find_first_not_of(' '));
+    value.erase(value.find_last_not_of(' ') + 1);
+    std::regex callPattern("^[a-zA-Z_][a-zA-Z0-9_]{0,}[.][a-zA-Z_][a-zA-Z0-9]*\\(");
 
+    if (std::regex_search(value, callPattern)){
+        if (value.ends_with(");")){
+            compileExpressionList(getNthToken(m_currentLine));
+            callSubroutine(tempTokens[3]);
+        }
+    }
+    else{
+        CODE expressions = splitString(currentLine, '=');
+        std::string expression = expressions[1];
+        expression = clearName(expression);
+        compileExpressionList(expression);
+
+
+//        vmCode.push_back("push constant " + value);
+//        vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + std::to_string(subroutineSymbolTable.index(varName.c_str())));
+    }
+
+    m_currentLine++;
 }
 
 void CompilationEngine::compileReturn() {
@@ -584,11 +658,14 @@ void CompilationEngine::compileReturn() {
     }
     else{
         std::string expression;
-        auto semiIndex = std::find(tempTokens.begin(), tempTokens.end(), ";");
 
         expression = currentLine.substr(7);
         expression = clearName(expression);
         compileExpression(expression);
         vmCode.push_back("return");
+
+        if (tempTokens.back() == "}"){
+            insideSubroutine = false;
+        }
     }
 }

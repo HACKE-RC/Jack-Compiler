@@ -2,6 +2,7 @@
 #include <vector>
 #include <regex>
 #include <numeric>
+#include <string>
 #include <algorithm>
 #include "../JackTokenizer/JackTokenizer.hpp"
 #include "../SymbolTable/SymbolTable.hpp"
@@ -20,8 +21,15 @@ public:
 
 private:
     bool insideClass = false;
+    bool insideSubroutine = false;
     bool insideWhile = false;
     bool insideIf = false;
+
+private:
+    std::map<std::string, std::string> reservedValues = {
+            {"true", "-1"},
+            {"false", "0"}
+    };
 
 private:
     CODE tempTokens;
@@ -32,7 +40,7 @@ private:
     SymbolTable subroutineSymbolTable;
     int m_currentLine;
 
-private:
+public:
     void compileDo();
     void compileLet();
     void compileClass();
@@ -42,7 +50,7 @@ private:
     void compileSubroutine();
     void compileParameterList();
     void compileSubroutineBody();
-    void compileExpressionList();
+    void compileExpressionList(std::string expressions);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
