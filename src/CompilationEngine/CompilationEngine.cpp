@@ -61,6 +61,10 @@ void CompilationEngine::compileSubroutine() {
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
+    if (tempTokens.empty()){
+        return;
+    }
+
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
             if (isValidName(tempTokens[2])){
@@ -81,6 +85,10 @@ void CompilationEngine::compileSubroutine() {
 
 std::string CompilationEngine::getNthToken(int n) {
     std::string str;
+
+    if (n >=  m_code.size()){
+        return "";
+    }
 
     if (JackTokenizer::isNotEmpty(m_code[n])){
         auto index = m_code[n].find_first_not_of(' ');
@@ -124,10 +132,11 @@ bool CompilationEngine::isValidName(std::string name) {
 }
 
 void CompilationEngine::compileVarDec() {
+
     std::string currentLine = getNthToken(m_currentLine);
+
     currentLine = currentLine.substr(currentLine.find_first_not_of(' '));
     tempTokens = splitString(currentLine, ' ');
-
 
     if ((tempTokens[0] == "var")){
         if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
@@ -206,9 +215,13 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
+    int i = 0;
+
     while(!(getNthToken(m_currentLine).starts_with("return"))){
         compileStatement();
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+//        std::cout << vmCode[i] << std::endl;
+        i++;
     }
     compileReturn();
 
@@ -218,14 +231,12 @@ void CompilationEngine::compileSubroutineBody() {
         insideSubroutine = false;
     }
 
-    for (auto &i : vmCode){
-        std::cout << i << std::endl;
+    for (auto &v : vmCode){
+        std::cout << v << std::endl;
     }
     std::cout << "----" << std::endl;
 
-
     m_currentLine++;
-
     compileSubroutine();
 }
 
@@ -277,8 +288,16 @@ void CompilationEngine::compileExpression(std::string& expr) {
     expr = clearName(expr);
     prioritizeBrackets(expr);
     exprVec = getExpressionVector(expr);
+    exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
+        return string.empty();
+    }), exprVec.end());
 
-    compileTerm(exprVec[0]);
+    if (exprVec[0] == "-"){
+        compileTerm(expr);
+    }
+    else{
+        compileTerm(exprVec[0]);
+    }
 
     if (exprVec.size() > 1){
         int n = 1;
@@ -433,9 +452,9 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     sepIndex.push_back(-1);
 
     if (sepIndex.size() == 2){
-        for (auto &ch: expr){
-            exprVec.push_back({ch});
-        }
+        exprVec.push_back(expr.substr(0, sepIndex[0]));
+        exprVec.push_back(expr.substr(sepIndex[0],1));
+        exprVec.push_back(expr.substr(sepIndex[0]+1));
         return exprVec;
     }
 
@@ -453,14 +472,16 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
         else{
             expression = expr.substr(start, expr.length());
         }
+        if (!(expression.empty())){
+            exprVec.push_back(clearName(expression));
+            if (!(op.empty())){
+                exprVec.push_back(clearName(op));
+            }
+            else{
+                break;
+            }
+        }
 
-        exprVec.push_back(clearName(expression));
-        if (!(op.empty())){
-            exprVec.push_back(clearName(op));
-        }
-        else{
-            break;
-        }
 
         op = "";
         start = index + 1;
@@ -563,9 +584,7 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
         return splitVec;
     }
 
-    for (int j = 0; j < (sepIndex.size() + 1); j++) {
-        auto index = sepIndex[j];
-
+    for (int index : sepIndex) {
         if (index >= 0) {
             std::string::iterator startIt = str.begin() + start;
             std::string::iterator endIt = str.begin() + index;
@@ -595,6 +614,7 @@ std::vector<std::string> CompilationEngine::splitString(std::string &str, char d
             break;
         }
     }
+
     return splitVec;
 }
 
