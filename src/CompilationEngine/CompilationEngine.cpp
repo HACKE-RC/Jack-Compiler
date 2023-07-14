@@ -13,7 +13,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
         m_currentLine++;
     }
-
+//
     if (tempTokens[0] == "class") {
         compileClass();
     }
@@ -220,7 +220,6 @@ void CompilationEngine::compileSubroutineBody() {
     while(!(getNthToken(m_currentLine).starts_with("return"))){
         compileStatement();
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-//        std::cout << vmCode[i] << std::endl;
         i++;
     }
     compileReturn();
@@ -257,9 +256,9 @@ void CompilationEngine::compileStatement() {
 void CompilationEngine::compileDo() {
     compileExpressionList(getNthToken(m_currentLine));
     callSubroutine(getNthToken(m_currentLine));
-
     m_currentLine++;
 }
+
 
 CODE CompilationEngine::removeBrackets(CODE code) {
     auto start = std::find(code.begin(), code.end(), "(") + 1;
@@ -344,14 +343,14 @@ char CompilationEngine::isCharacterPresent(const std::string& str1, const std::s
 void CompilationEngine::compileExpressionList(std::string expressions) {
     std::string exprList = removeBrackets(expressions);
 
-    if (exprList == ""){
+    if (exprList.empty()) {
         return;
     }
 
     exprList = prioritizeBrackets(exprList);
     CODE exprVec;
 
-    for (char ch: exprList){
+    for (char ch : exprList) {
         std::string temp = {ch};
         exprVec.push_back(temp);
     }
@@ -359,13 +358,12 @@ void CompilationEngine::compileExpressionList(std::string expressions) {
     std::vector<int> sepIndex;
     int k = 0;
 
-    for (auto const &expr: exprVec){
-        if (expr == ","){
-            if (exprVec[k+2] == "," || exprVec[k+2] == ")"){
+    for (auto it = exprVec.begin(); it != exprVec.end(); ++it) {
+        if (*it == ",") {
+            if (std::next(it, 2) != exprVec.end() && (*(std::next(it, 2)) == "," || *(std::next(it, 2)) == ")")) {
+                continue;
             }
-            else{
-                sepIndex.push_back(k);
-            }
+            sepIndex.push_back(k);
         }
         k++;
     }
@@ -374,20 +372,21 @@ void CompilationEngine::compileExpressionList(std::string expressions) {
 
     int start = 0;
     std::string expression;
-    for (int j = 0; j < (sepIndex.size() + 1); j++) {
-        auto index = sepIndex[j];
+
+    for (size_t j = 0; j < sepIndex.size(); j++) {
+        int index = sepIndex[j];
 
         if (index >= 0) {
             std::vector<std::string>::iterator startIt = exprVec.begin() + start;
             std::vector<std::string>::iterator endIt = exprVec.begin() + index;
 
-            try{
+            try {
                 expression.clear();
                 for (auto it = startIt; it != endIt; ++it) {
-                    expression+= *it;
+                    expression += *it;
                 }
-            }
-            catch (const std::exception& e){
+            } catch (const std::exception& e) {
+                std::cout << "error" << std::endl;
                 break;
             }
         } else {
@@ -399,14 +398,15 @@ void CompilationEngine::compileExpressionList(std::string expressions) {
             expression.clear();
 
             for (auto it = startIt; it != exprVec.end(); ++it) {
-                expression+= *it;
+                expression += *it;
             }
-
         }
+
         compileExpression(expression);
         start = index + 1;
     }
 }
+
 
 void CompilationEngine::compileTerm(std::string term) {
     term = clearName(term);
@@ -560,64 +560,6 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
     return temp;
 }
 
-std::vector<std::string> CompilationEngine::splitString(std::string &str, char delim) {
-//    Split string through True Separator Search Algorithm
-    std::vector<int> sepIndex;
-    std::vector<std::string> splitVec;
-    int k = 0;
-    int start = 0;
-
-    std::string split;
-
-    for (char ch: str){
-        if (ch == delim){
-            sepIndex.push_back(k);
-        }
-        k++;
-    }
-
-    sepIndex.push_back(-1);
-    std::string splitStr;
-
-    if (sepIndex.size() == 1){
-        splitVec.push_back(str);
-        return splitVec;
-    }
-
-    for (int index : sepIndex) {
-        if (index >= 0) {
-            std::string::iterator startIt = str.begin() + start;
-            std::string::iterator endIt = str.begin() + index;
-
-            try{
-                splitStr.clear();
-                splitStr = std::string(startIt, endIt);
-                if ((splitStr.empty()) || splitStr == " "){
-                    continue;
-                }
-                splitStr.erase(0, splitStr.find_first_not_of(' '));
-                splitStr.erase(splitStr.find_last_not_of(' ') + 1);
-                splitVec.push_back(splitStr);
-            }
-            catch (const std::exception& e){
-                break;
-            }
-            start = index + 1;
-        }
-        else{
-            splitStr = std::string(str.begin() + start, str.end());
-            splitStr = clearName(splitStr);
-            if ((splitStr.empty()) || splitStr == " "){
-                    continue;
-            }
-            splitVec.push_back(splitStr);
-            break;
-        }
-    }
-
-    return splitVec;
-}
-
 void CompilationEngine::callSubroutine(std::string line) {
     CODE lineVec = splitString(line, ' ');
     std::string funcName;
@@ -658,10 +600,6 @@ void CompilationEngine::compileLet() {
         std::string expression = expressions[1];
         expression = clearName(expression);
         compileExpressionList(expression);
-
-
-//        vmCode.push_back("push constant " + value);
-//        vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + std::to_string(subroutineSymbolTable.index(varName.c_str())));
     }
 
     m_currentLine++;
@@ -689,3 +627,49 @@ void CompilationEngine::compileReturn() {
         }
     }
 }
+
+
+std::string& ltrim(std::string& str) {
+    auto it = std::find_if(str.begin(), str.end(), [](char ch) {
+        return !std::isspace(ch);
+    });
+    str.erase(str.begin(), it);
+    return str;
+}
+
+std::string& rtrim(std::string& str) {
+    auto it = std::find_if(str.rbegin(), str.rend(), [](char ch) {
+        return !std::isspace(ch);
+    });
+    str.erase(it.base(), str.end());
+    return str;
+}
+
+std::string& trim(std::string& str) {
+    return ltrim(rtrim(str));
+}
+
+std::vector<std::string> CompilationEngine::splitString(std::string& str, char delim) {
+    std::vector<std::string> splitVec;
+    std::string split;
+
+    std::size_t start = 0;
+    std::size_t end = 0;
+
+    while ((end = str.find(delim, start)) != std::string::npos) {
+        split = str.substr(start, end - start);
+        trim(split);
+        if (!split.empty())
+            splitVec.push_back(split);
+        start = end + 1;
+    }
+
+    split = str.substr(start);
+    trim(split);
+    if (!split.empty())
+        splitVec.push_back(split);
+
+    return splitVec;
+}
+
+

@@ -13,7 +13,25 @@ int main(int argc, char* argv[]){
 //    tokenizer.cleanCode();
 //    tokenizer.tokenizeAllCode();
     CompilationEngine compiler(argv[1]);
-//    compiler.
+//    std::string k = CompilationEngine::removeBrackets("do Main.fillMemory(8001, 15, -1);");
+//
+//    auto s = compiler.prioritizeBrackets(k);
+//    compiler.compileExpressionList(s);
+//    auto z = compiler.splitString(s, ' ');
+//
+//    for (auto i : z){
+//        i.erase(std::remove(i.begin(), i.end(), ','), i.end());
+//        compiler.compileExpression(i);
+//        CompilationEngine::getExpressionVector(i);
+//    }
+//
+//    compiler.callSubroutine("do Main.fillMemory();");
+//    for (auto o: compiler.vmCode){
+//        std::cout << o << std::endl;
+//    }
+//    compiler.compileDo("do Main.fillMemory(8001, 15, -1);");
+
+    //    compiler.
 
     return 0;
 }

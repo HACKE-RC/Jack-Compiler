@@ -4,6 +4,7 @@
 #include <numeric>
 #include <string>
 #include <algorithm>
+#include <cctype>
 #include "../JackTokenizer/JackTokenizer.hpp"
 #include "../SymbolTable/SymbolTable.hpp"
 
@@ -65,6 +66,6 @@ public:
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     static std::string removeBrackets(const std::string& str);
-    static std::vector<std::string> splitString(std::string &str, char delim);
+    std::vector<std::string> splitString(std::string &str, char delim);
     static char isCharacterPresent(const std::string &str, const std::string &str2);
 };
