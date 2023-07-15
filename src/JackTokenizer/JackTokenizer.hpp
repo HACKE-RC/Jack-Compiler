@@ -19,7 +19,7 @@ static CODE validKeywords = {"if", "while", "class", "constructor", "function", 
                       "char", "boolean", "void", "true", "false", "this", "let", "do", "else", "return"};
 static CODE validSymbols = {"{", "}", "(", ")", "[", "]", ".",  ",",  ";",  "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"};
 static CODE validSubroutineDec = {"function", "method", "constructor"};
-static CODE validOperations = {"+", "-", "/", "*"};
+static CODE validOperations = {"+", "-", "/", "*", "="};
 
 
 class JackTokenizer{

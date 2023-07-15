@@ -215,12 +215,8 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
-    int i = 0;
-
     while(!(getNthToken(m_currentLine).starts_with("return"))){
         compileStatement();
-        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-        i++;
     }
     compileReturn();
 
@@ -240,12 +236,16 @@ void CompilationEngine::compileSubroutineBody() {
 }
 
 void CompilationEngine::compileStatement() {
+    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
         if (tempTokens[0] == "do") {
             compileDo();
         }
         else if (tempTokens[0] == "let") {
             compileLet();
+        }
+        else if (tempTokens[0] == "if"){
+            compileIf();
         }
         else{
             m_currentLine++;
@@ -314,6 +314,9 @@ void CompilationEngine::compileExpression(std::string& expr) {
             }
             else if (exprVec[n] == "/"){
                 vmCode.push_back("call Math.divide 2");
+            }
+            else if (exprVec[n] == "="){
+                vmCode.push_back("eq");
             }
          n += 2;
       }
@@ -443,7 +446,7 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     expr.erase(std::remove(expr.begin(), expr.end(), ' '), expr.end());
 
     for (char expression: expr){
-        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/')){
+        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') | (expression == '&') | (expression == '|') | (expression == '<') | (expression == '>') | (expression == '=')){
             sepIndex.push_back(k);
         }
         k++;
@@ -672,4 +675,42 @@ std::vector<std::string> CompilationEngine::splitString(std::string& str, char d
     return splitVec;
 }
 
+void CompilationEngine::compileIf() {
+    std::string currentLine = getNthToken(m_currentLine);
+    tempTokens = splitString(currentLine, ' ');
+    std::string expression;
+    bool insideIf = false;
 
+    if (currentLine.back() == '{'){
+        insideIf = true;
+    }
+
+    expression = removeBrackets(currentLine);
+    compileExpression(expression);
+    vmCode.push_back("not");
+    vmCode.push_back("if-goto " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
+//    m_labelCount++;
+
+    while(std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
+        m_currentLine++;
+        compileStatement();
+    }
+    compileReturn();
+
+    if (insideIf){
+        insideIf = false;
+        m_currentLine++;
+        if (getNthToken(m_currentLine) == "}"){
+            m_currentLine++;
+        }
+        if (getNthToken(m_currentLine) == "else"){
+            m_currentLine++;
+        }
+        vmCode.push_back("label " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
+        m_labelCount++;
+
+        while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
+            compileStatement();
+        }
+    }
+}

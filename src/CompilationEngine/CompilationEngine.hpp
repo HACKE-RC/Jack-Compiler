@@ -24,7 +24,7 @@ private:
     bool insideClass = false;
     bool insideSubroutine = false;
     bool insideWhile = false;
-    bool insideIf = false;
+//    bool insideIf = false;
 
 private:
     std::map<std::string, std::string> reservedValues = {
@@ -32,17 +32,23 @@ private:
             {"false", "0"}
     };
 
+    std::string IF_LABEL_PREFIX = "LABEL_IF_";
+
 private:
     CODE tempTokens;
+    CODE m_code;
 
 private:
-    CODE m_code;
     SymbolTable classSymbolTable;
     SymbolTable subroutineSymbolTable;
-    int m_currentLine;
 
-public:
+private:
+    int m_currentLine;
+    int m_labelCount = 0;
+
+private:
     void compileDo();
+    void compileIf();
     void compileLet();
     void compileClass();
     void compileReturn();
@@ -51,18 +57,18 @@ public:
     void compileSubroutine();
     void compileParameterList();
     void compileSubroutineBody();
-    void compileExpressionList(std::string expressions);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
     void compileClassVarDec(CODE tokens);
+    void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
-    void callSubroutine(std::string line);
-    void compileExpression(std::string &expr);
     static bool isValidName(std::string name);
+    void compileExpression(std::string &expr);
     static std::string clearName(std::string name);
     static CODE getExpressionVector(std::string expr);
+    void compileExpressionList(std::string expressions);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     static std::string removeBrackets(const std::string& str);
