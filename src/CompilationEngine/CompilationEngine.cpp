@@ -215,10 +215,10 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
-    while(!(getNthToken(m_currentLine).starts_with("return"))){
+    while(!(getNthToken(m_currentLine).starts_with("}"))){
         compileStatement();
     }
-    compileReturn();
+//    compileReturn();
 
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
@@ -247,9 +247,12 @@ void CompilationEngine::compileStatement() {
         else if (tempTokens[0] == "if"){
             compileIf();
         }
-        else{
-            m_currentLine++;
+        else if (tempTokens[0] == "return"){
+            compileReturn();
         }
+//        else{
+//            m_currentLine++;
+//        }
     }
 }
 
@@ -613,6 +616,10 @@ void CompilationEngine::compileReturn() {
     tempTokens = splitString(currentLine, ' ');
     m_currentLine++;
 
+    if (std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
+        return;
+    }
+
     if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
         vmCode.push_back("push constant 0");
         vmCode.push_back("return");
@@ -688,29 +695,34 @@ void CompilationEngine::compileIf() {
     expression = removeBrackets(currentLine);
     compileExpression(expression);
     vmCode.push_back("not");
+
+    m_labelCount++;
     vmCode.push_back("if-goto " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
-//    m_labelCount++;
 
     while(std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
         m_currentLine++;
         compileStatement();
     }
-    compileReturn();
+//    compileReturn();
 
     if (insideIf){
         insideIf = false;
-        m_currentLine++;
+//        m_currentLine++;
         if (getNthToken(m_currentLine) == "}"){
             m_currentLine++;
         }
-        if (getNthToken(m_currentLine) == "else"){
+        if (getNthToken(m_currentLine).find("else") != std::string::npos){
             m_currentLine++;
         }
         vmCode.push_back("label " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
-        m_labelCount++;
+//        m_labelCount++;
+        m_labelCount--;
 
+        currentLine = getNthToken(m_currentLine);
+        tempTokens = splitString(currentLine, ' ');
         while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
             compileStatement();
         }
+//        compileReturn();
     }
 }
