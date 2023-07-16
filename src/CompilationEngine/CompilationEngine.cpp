@@ -607,6 +607,7 @@ void CompilationEngine::compileLet() {
         expression = clearName(expression);
         compileExpressionList(expression);
     }
+    vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + " " + std::to_string(subroutineSymbolTable.index(varName.c_str())));
 
     m_currentLine++;
 }
@@ -696,14 +697,19 @@ void CompilationEngine::compileIf() {
     compileExpression(expression);
     vmCode.push_back("not");
 
-    m_labelCount++;
-    vmCode.push_back("if-goto " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
+    m_ifLabelCount++;
+    vmCode.push_back("if-goto " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
 
-    while(std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
+    while((std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else{") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") == tempTokens.end())){
         m_currentLine++;
+        if ((std::find(tempTokens.begin(), tempTokens.end(), "else{") != tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") != tempTokens.end())){
+            break;
+        }
         compileStatement();
+        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
-//    compileReturn();
+
+    vmCode.push_back("goto " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
 
     if (insideIf){
         insideIf = false;
@@ -714,15 +720,16 @@ void CompilationEngine::compileIf() {
         if (getNthToken(m_currentLine).find("else") != std::string::npos){
             m_currentLine++;
         }
-        vmCode.push_back("label " + IF_LABEL_PREFIX + std::to_string(m_labelCount));
-//        m_labelCount++;
-        m_labelCount--;
+        vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+//        m_ifLabelCount++;
+        m_ifLabelCount--;
 
         currentLine = getNthToken(m_currentLine);
         tempTokens = splitString(currentLine, ' ');
         while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
             compileStatement();
         }
-//        compileReturn();
+        vmCode.push_back("label " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
+        m_continueLabelCount++;
     }
 }

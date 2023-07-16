@@ -32,7 +32,8 @@ private:
             {"false", "0"}
     };
 
-    std::string IF_LABEL_PREFIX = "LABEL_IF_";
+    std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
+    std::string CONTINUE_LABEL_PREFIX = "LABEL_CONTINUE_";
 
 private:
     CODE tempTokens;
@@ -44,7 +45,8 @@ private:
 
 private:
     int m_currentLine;
-    int m_labelCount = 0;
+    int m_ifLabelCount = 0;
+    int m_continueLabelCount = 0;
 
 private:
     void compileDo();
