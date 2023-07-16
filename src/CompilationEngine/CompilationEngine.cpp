@@ -20,6 +20,11 @@ CompilationEngine::CompilationEngine(std::string fName) {
 }
 
 void CompilationEngine::compileClass() {
+
+    if (isValidName(tempTokens[1])){
+        m_currentClassName = tempTokens[1];
+    }
+
     m_currentLine++;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
@@ -68,19 +73,16 @@ void CompilationEngine::compileSubroutine() {
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
             if (isValidName(tempTokens[2])){
-
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
-
+                vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2]);
                 compileParameterList();
                 m_currentLine++;
                 compileSubroutineBody();
             }
         }
     }
-
-
 }
 
 std::string CompilationEngine::getNthToken(int n) {
@@ -250,6 +252,9 @@ void CompilationEngine::compileStatement() {
         else if (tempTokens[0] == "return"){
             compileReturn();
         }
+        else if (tempTokens[0] == "while"){
+            compileWhile();
+        }
 //        else{
 //            m_currentLine++;
 //        }
@@ -320,6 +325,12 @@ void CompilationEngine::compileExpression(std::string& expr) {
             }
             else if (exprVec[n] == "="){
                 vmCode.push_back("eq");
+            }
+            else if (exprVec[n] == ">"){
+                vmCode.push_back("gt");
+            }
+            else if (exprVec[n] == "<"){
+                vmCode.push_back("lt");
             }
          n += 2;
       }
@@ -617,9 +628,9 @@ void CompilationEngine::compileReturn() {
     tempTokens = splitString(currentLine, ' ');
     m_currentLine++;
 
-    if (std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
-        return;
-    }
+//    if (std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
+//        return;
+//    }
 
     if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
         vmCode.push_back("push constant 0");
@@ -713,15 +724,15 @@ void CompilationEngine::compileIf() {
 
     if (insideIf){
         insideIf = false;
-//        m_currentLine++;
+
         if (getNthToken(m_currentLine) == "}"){
             m_currentLine++;
         }
         if (getNthToken(m_currentLine).find("else") != std::string::npos){
             m_currentLine++;
         }
+
         vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
-//        m_ifLabelCount++;
         m_ifLabelCount--;
 
         currentLine = getNthToken(m_currentLine);
@@ -732,4 +743,27 @@ void CompilationEngine::compileIf() {
         vmCode.push_back("label " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
         m_continueLabelCount++;
     }
+}
+
+void CompilationEngine::compileWhile() {
+    std::string currentLine = getNthToken(m_currentLine);
+    std::string expression = removeBrackets(currentLine);
+
+    vmCode.push_back("label " + WHILE_LABEL_PREFIX + std::to_string(m_whileLabelCount));
+    compileExpression(expression);
+    vmCode.push_back("not");
+    vmCode.push_back("if-goto " + CONTINUE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+
+    m_currentLine++;
+    while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
+        compileStatement();
+        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    }
+
+    vmCode.push_back("goto " + WHILE_LABEL_PREFIX + std::to_string(m_whileLabelCount));
+    m_whileLabelCount++;
+
+    vmCode.push_back("label " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
+    m_continueLabelCount++;
+    m_currentLine++;
 }

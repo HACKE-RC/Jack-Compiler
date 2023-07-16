@@ -24,7 +24,9 @@ private:
     bool insideClass = false;
     bool insideSubroutine = false;
     bool insideWhile = false;
-//    bool insideIf = false;
+
+private:
+    std::string m_currentClassName;
 
 private:
     std::map<std::string, std::string> reservedValues = {
@@ -34,6 +36,7 @@ private:
 
     std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
     std::string CONTINUE_LABEL_PREFIX = "LABEL_CONTINUE_";
+    std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";
 
 private:
     CODE tempTokens;
@@ -47,12 +50,14 @@ private:
     int m_currentLine;
     int m_ifLabelCount = 0;
     int m_continueLabelCount = 0;
+    int m_whileLabelCount = 0;
 
 private:
     void compileDo();
     void compileIf();
     void compileLet();
     void compileClass();
+    void compileWhile();
     void compileReturn();
     void compileVarDec();
     void compileStatement();
