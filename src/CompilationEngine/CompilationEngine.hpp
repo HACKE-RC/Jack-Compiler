@@ -34,6 +34,8 @@ private:
             {"false", "0"}
     };
 
+    std::map<std::string, std::string> subroutineTypes;
+
     std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
     std::string CONTINUE_LABEL_PREFIX = "LABEL_CONTINUE_";
     std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";

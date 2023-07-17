@@ -37,6 +37,9 @@ void CompilationEngine::compileClass() {
     }
 
     compileSubroutine();
+    for (auto& v: vmCode){
+        std::cout << v << std::endl;
+    }
 }
 
 
@@ -58,7 +61,6 @@ void CompilationEngine::compileClassVarDec(CODE tokens) {
     else{
         return;
     }
-
 }
 
 void CompilationEngine::compileSubroutine() {
@@ -77,6 +79,7 @@ void CompilationEngine::compileSubroutine() {
                     insideSubroutine = true;
                 }
                 vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2]);
+                subroutineTypes[m_currentClassName + "." + tempTokens[2]] = tempTokens[1];
                 compileParameterList();
                 m_currentLine++;
                 compileSubroutineBody();
@@ -228,17 +231,13 @@ void CompilationEngine::compileSubroutineBody() {
         insideSubroutine = false;
     }
 
-    for (auto &v : vmCode){
-        std::cout << v << std::endl;
-    }
-    std::cout << "----" << std::endl;
-
     m_currentLine++;
     compileSubroutine();
 }
 
 void CompilationEngine::compileStatement() {
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    vmCode.push_back("//" + getNthToken(m_currentLine));
     if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
         if (tempTokens[0] == "do") {
             compileDo();
@@ -264,6 +263,7 @@ void CompilationEngine::compileStatement() {
 void CompilationEngine::compileDo() {
     compileExpressionList(getNthToken(m_currentLine));
     callSubroutine(getNthToken(m_currentLine));
+    vmCode.push_back("pop temp 0");
     m_currentLine++;
 }
 
@@ -302,6 +302,11 @@ void CompilationEngine::compileExpression(std::string& expr) {
     if (exprVec[0] == "-"){
         compileTerm(expr);
     }
+    else if (exprVec[0] == "~"){
+        expr = removeBrackets(expr);
+        compileExpression(expr);
+        vmCode.push_back("not");
+    }
     else{
         compileTerm(exprVec[0]);
     }
@@ -331,6 +336,9 @@ void CompilationEngine::compileExpression(std::string& expr) {
             }
             else if (exprVec[n] == "<"){
                 vmCode.push_back("lt");
+            }
+            else if (exprVec[n] == "&"){
+                vmCode.push_back("and");
             }
          n += 2;
       }
@@ -427,6 +435,13 @@ void CompilationEngine::compileExpressionList(std::string expressions) {
 
 void CompilationEngine::compileTerm(std::string term) {
     term = clearName(term);
+
+    if (term.starts_with('(')){
+        term.erase(0, 1);
+    }
+    else if (term.ends_with(')')){
+        term.pop_back();
+    }
     if (isNumber(term)){
         vmCode.push_back("push constant " + term);
     }
@@ -445,6 +460,9 @@ void CompilationEngine::compileTerm(std::string term) {
         vmCode.push_back("push constant " + term.substr(1));
         vmCode.push_back("neg");
     }
+    else if (reservedValues.find(term) != reservedValues.end()){
+        vmCode.push_back("push constant " + reservedValues[term]);
+    }
 }
 
 CODE CompilationEngine::getExpressionVector(std::string expr) {
@@ -460,7 +478,7 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     expr.erase(std::remove(expr.begin(), expr.end(), ' '), expr.end());
 
     for (char expression: expr){
-        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') | (expression == '&') | (expression == '|') | (expression == '<') | (expression == '>') | (expression == '=')){
+        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') || (expression == '&') || (expression == '|') || (expression == '<') || (expression == '>') || (expression == '=') || (expression == '~')){
             sepIndex.push_back(k);
         }
         k++;
@@ -498,6 +516,9 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
                 break;
             }
         }
+        else if (op == "~"){
+            exprVec.push_back(op);
+        }
 
 
         op = "";
@@ -507,11 +528,12 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
 }
 
 std::string CompilationEngine::clearName(std::string name) {
-    size_t spaceStart = name.find_first_not_of(' ');
+    size_t nameStart = name.find_first_not_of(' ');
     size_t spaceEnd = name.find_last_not_of(' ');
 
-    if (spaceStart != std::string::npos && spaceEnd != std::string::npos) {
-        name =  name.substr(spaceStart, spaceEnd - spaceStart + 1);
+    if (nameStart != std::string::npos && spaceEnd != std::string::npos) {
+        name =  name.substr(nameStart, spaceEnd - nameStart + 1);
+
         if (name.ends_with(";")) {
             name.pop_back();
         }
