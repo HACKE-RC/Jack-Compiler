@@ -24,7 +24,6 @@ private:
     bool insideClass = false;
     bool insideSubroutine = false;
     bool insideWhile = false;
-    bool insideIf = false;
 
 private:
     std::string m_currentClassName;
@@ -38,7 +37,8 @@ private:
     std::map<std::string, std::string> subroutineTypes;
 
     std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
-    std::string CONTINUE_LABEL_PREFIX = "LABEL_CONTINUE_";
+    std::string CONTINUE_IF_LABEL_PREFIX = "LABEL_CONTINUE_IF_";
+    std::string CONTINUE_WHILE_LABEL_PREFIX = "LABEL_CONTINUE_WHILE_";
     std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";
 
 private:
@@ -52,7 +52,8 @@ private:
 private:
     int m_currentLine;
     int m_ifLabelCount = 0;
-    int m_continueLabelCount = 0;
+    int m_continueIfLabelCount = 0;
+    int m_continueWhileLabelCount = 0;
     int m_whileLabelCount = 0;
 
 private:

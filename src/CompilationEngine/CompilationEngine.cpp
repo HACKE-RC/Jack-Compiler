@@ -220,7 +220,7 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
-    while (!(getNthToken(m_currentLine).starts_with("}")) && ((insideIf == false) || (insideWhile == false))){
+    while (!(getNthToken(m_currentLine).starts_with("}"))){
         compileStatement();
     }
 //    compileReturn();
@@ -720,6 +720,7 @@ void CompilationEngine::compileIf() {
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
     std::string expression;
+    bool insideIf = false;
 
     if (currentLine.back() == '{'){
         insideIf = true;
@@ -729,7 +730,7 @@ void CompilationEngine::compileIf() {
     compileExpression(expression);
     vmCode.push_back("not");
 
-    m_ifLabelCount++;
+    ++m_ifLabelCount;
     vmCode.push_back("if-goto " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
 
     while((std::find(tempTokens.begin(), tempTokens.end(), "else{") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") == tempTokens.end())){
@@ -741,8 +742,7 @@ void CompilationEngine::compileIf() {
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
 
-    m_continueLabelCount++;
-    vmCode.push_back("goto " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
+    vmCode.push_back("goto " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
 
     if (insideIf){
         insideIf = false;
@@ -755,7 +755,7 @@ void CompilationEngine::compileIf() {
         }
 
         vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
-        m_ifLabelCount--;
+        --m_ifLabelCount;
 
         currentLine = getNthToken(m_currentLine);
         tempTokens = splitString(currentLine, ' ');
@@ -763,19 +763,21 @@ void CompilationEngine::compileIf() {
             compileStatement();
         }
         m_currentLine++;
-        vmCode.push_back("label " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
-        m_continueLabelCount--;
+        vmCode.push_back("label " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        m_continueIfLabelCount++;
     }
 }
 
 void CompilationEngine::compileWhile() {
     std::string currentLine = getNthToken(m_currentLine);
     std::string expression = removeBrackets(currentLine);
+    int contCount = m_continueIfLabelCount;
 
     vmCode.push_back("label " + WHILE_LABEL_PREFIX + std::to_string(m_whileLabelCount));
     compileExpression(expression);
     vmCode.push_back("not");
-    vmCode.push_back("if-goto " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
+
+    vmCode.push_back("if-goto " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(m_continueWhileLabelCount));
 
     m_currentLine++;
     while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
@@ -786,7 +788,7 @@ void CompilationEngine::compileWhile() {
     vmCode.push_back("goto " + WHILE_LABEL_PREFIX + std::to_string(m_whileLabelCount));
     m_whileLabelCount++;
 
-    vmCode.push_back("label " + CONTINUE_LABEL_PREFIX + std::to_string(m_continueLabelCount));
-    m_continueLabelCount++;
+    vmCode.push_back("label " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(m_continueWhileLabelCount));
+    m_continueWhileLabelCount++;
     m_currentLine++;
 }
