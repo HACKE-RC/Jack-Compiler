@@ -57,6 +57,10 @@ private:
     int m_whileLabelCount = 0;
 
 private:
+    std::string m_currentSubroutineDef;
+    int m_funcNameIndex;
+
+private:
     void compileDo();
     void compileIf();
     void compileLet();

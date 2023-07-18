@@ -80,20 +80,18 @@ void CompilationEngine::compileSubroutine() {
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
-                params = removeBrackets(getNthToken(m_currentLine));
-                if (!(params.empty())){
-                    vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2] + " " + std::to_string(countParameters(
-                            splitString(params, ' '))));
-                }
-                else{
-                    vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2] + " " + "0");
-                }
+                m_currentSubroutineDef = "function " + m_currentClassName + "." + tempTokens[2] ;
+//                params = (m_currentSubroutineDef +  " 0");
+                vmCode.push_back(m_currentSubroutineDef);
+                m_funcNameIndex = vmCode.size() - 1;
+
                 subroutineTypes[m_currentClassName + "." + tempTokens[2]] = tempTokens[1];
                 compileParameterList();
                 m_currentLine++;
                 compileSubroutineBody();
             }
         }
+
     }
 }
 
@@ -181,10 +179,12 @@ void CompilationEngine::compileVarDec() {
             compileVarDec();
         }
         else{
+            vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
             return;
         }
     }
     else{
+        vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
         return;
     }
 
