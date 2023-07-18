@@ -58,6 +58,7 @@ private:
 
 private:
     std::string m_currentSubroutineDef;
+    std::string m_currentSubroutineDecType;
     int m_funcNameIndex;
 
 private:
@@ -75,7 +76,7 @@ private:
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
-    void compileClassVarDec(CODE tokens);
+    void compileClassVarDec();
     void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);

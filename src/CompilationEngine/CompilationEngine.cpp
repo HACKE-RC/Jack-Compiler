@@ -23,13 +23,17 @@ void CompilationEngine::compileClass() {
 
     if (isValidName(tempTokens[1])){
         m_currentClassName = tempTokens[1];
+        validSubroutineTypes.push_back(m_currentClassName);
+    }
+    else{
+        return;
     }
 
     m_currentLine++;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
     if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
-        compileClassVarDec(tempTokens);
+        compileClassVarDec();
     }
 
     if (tempTokens.back() == "{"){
@@ -43,20 +47,44 @@ void CompilationEngine::compileClass() {
 }
 
 
-void CompilationEngine::compileClassVarDec(CODE tokens) {
+void CompilationEngine::compileClassVarDec() {
+    std::string currentLine = getNthToken(m_currentLine);
+    auto tokens = JackTokenizer::tokenizeCode(currentLine);
+    tempTokens = tokens;
 
     if (tokens[0] == "static" || tokens[0] == "field") {
         if (JackTokenizer::isValid(validVarTypes, tokens[1])){
             if (isValidName(clearName(tokens[2]))){
-                classSymbolTable.insert(clearName(tokens[2]), tokens[1], tokens[0]);
+                m_currentLine++;
+
+                std::string variables = currentLine.substr(currentLine.find(tempTokens[2]));
+                variables = clearName(variables);
+                variables.erase(std::remove(variables.begin(), variables.end(), ' '), variables.end());
+
+                CODE variableVector;
+                variableVector = splitString(variables, ',');
+
+                int i = 0;
+                for (auto &variable: variableVector){
+                    std::string name = variableVector[i];
+
+                    if (isValidName(clearName(name))) {
+                        auto kind = tempTokens[0];
+                        classSymbolTable.insert(clearName(name), tempTokens[1], kind);
+                        i++;
+                    }
+                }
+                currentLine = getNthToken(m_currentLine);
+                tempTokens = JackTokenizer::tokenizeCode(currentLine);
+//                m_currentLine++;
+                compileClassVarDec();
             }
         }
 
-        std::string token = getNthToken(m_currentLine);
-        tempTokens = JackTokenizer::tokenizeCode(token);
-        m_currentLine++;
-
-        compileClassVarDec(tempTokens);
+//        std::string token = getNthToken(m_currentLine);
+//        m_currentLine++;
+//
+//        compileClassVarDec();
     }
     else{
         return;
@@ -68,8 +96,6 @@ void CompilationEngine::compileSubroutine() {
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
-    std::string params;
-
     if (tempTokens.empty()){
         return;
     }
@@ -80,8 +106,10 @@ void CompilationEngine::compileSubroutine() {
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
-                m_currentSubroutineDef = "function " + m_currentClassName + "." + tempTokens[2] ;
-//                params = (m_currentSubroutineDef +  " 0");
+//                m_currentSubroutineDecType = tempTokens[0];
+
+                m_currentSubroutineDecType = tempTokens[0];
+                m_currentSubroutineDef = tempTokens[0] + " " + m_currentClassName + "." + tempTokens[2] ;
                 vmCode.push_back(m_currentSubroutineDef);
                 m_funcNameIndex = vmCode.size() - 1;
 
@@ -227,10 +255,15 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 void CompilationEngine::compileSubroutineBody() {
     compileVarDec();
 
+    if (m_currentSubroutineDecType == "constructor"){
+       vmCode.push_back("push constant " + std::to_string(classSymbolTable.count("field")));
+       vmCode.push_back("call Memory.alloc 1");
+       vmCode.push_back("pop pointer 0");
+    }
+
     while (!(getNthToken(m_currentLine).starts_with("}"))){
         compileStatement();
     }
-//    compileReturn();
 
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
@@ -656,7 +689,13 @@ void CompilationEngine::compileLet() {
         expression = clearName(expression);
         compileExpressionList(expression);
     }
-    vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + " " + std::to_string(subroutineSymbolTable.index(varName.c_str())));
+
+    if (m_currentSubroutineDecType == "constructor"){
+        vmCode.push_back("pop this " + std::to_string(classSymbolTable.index(varName.c_str())));
+    }
+    else{
+        vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + " " + std::to_string(subroutineSymbolTable.index(varName.c_str())));
+    }
 
     m_currentLine++;
 }
@@ -666,11 +705,12 @@ void CompilationEngine::compileReturn() {
     tempTokens = splitString(currentLine, ' ');
     m_currentLine++;
 
-//    if (std::find(tempTokens.begin(), tempTokens.end(), "return") == tempTokens.end()){
-//        return;
-//    }
-
-    if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
+//  All constructors HAVE TO return this, even if they don't do anything with it.
+    if (m_currentSubroutineDecType == "constructor"){
+        vmCode.push_back("push pointer 0");
+        vmCode.push_back("return");
+    }
+    else if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
         vmCode.push_back("push constant 0");
         vmCode.push_back("return");
     }
