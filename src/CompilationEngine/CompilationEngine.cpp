@@ -5,7 +5,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
     JackTokenizer tokenizer(std::move(fName), "test.tst");
     tokenizer.cleanCode();
     m_code = tokenizer.getAllCodeVector();
-
+    removeTabs(m_code);
     m_currentLine = 0;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
@@ -109,8 +109,6 @@ std::string CompilationEngine::getNthToken(int n) {
         if (index != std::string::npos){
             m_code[n] = m_code[n].substr(index);
             str = m_code[n];
-            str.erase(std::remove(str.begin(), str.end(), '\t'), str.end());
-            str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
         }
         if (str.empty()){
             m_currentLine++;
@@ -809,4 +807,14 @@ void CompilationEngine::compileWhile() {
     vmCode.push_back("label " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(m_continueWhileLabelCount));
     m_continueWhileLabelCount++;
     m_currentLine++;
+}
+
+void CompilationEngine::removeTabs(std::vector<std::string>& string_vector) {
+    for (int i = 0; i < string_vector.size(); i++) {
+        string_vector[i].erase(std::remove(string_vector[i].begin(), string_vector[i].end(), '\t'), string_vector[i].end());
+        if (string_vector[i].empty()) {
+            string_vector.erase(string_vector.begin() + i);
+            i--;
+        }
+    }
 }

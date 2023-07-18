@@ -83,6 +83,7 @@ private:
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     static std::string removeBrackets(const std::string& str);
+    static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     static char isCharacterPresent(const std::string &str, const std::string &str2);
 };
