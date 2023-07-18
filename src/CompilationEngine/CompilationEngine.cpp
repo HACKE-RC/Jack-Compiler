@@ -68,6 +68,8 @@ void CompilationEngine::compileSubroutine() {
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
+    std::string params;
+
     if (tempTokens.empty()){
         return;
     }
@@ -78,7 +80,14 @@ void CompilationEngine::compileSubroutine() {
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
-                vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2]);
+                params = removeBrackets(getNthToken(m_currentLine));
+                if (!(params.empty())){
+                    vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2] + " " + std::to_string(countParameters(
+                            splitString(params, ' '))));
+                }
+                else{
+                    vmCode.push_back("function " + m_currentClassName + "." + tempTokens[2] + " " + "0");
+                }
                 subroutineTypes[m_currentClassName + "." + tempTokens[2]] = tempTokens[1];
                 compileParameterList();
                 m_currentLine++;
@@ -461,7 +470,13 @@ void CompilationEngine::compileTerm(std::string term) {
         vmCode.push_back("neg");
     }
     else if (reservedValues.find(term) != reservedValues.end()){
-        vmCode.push_back("push constant " + reservedValues[term]);
+        if (reservedValues[term] == "-1"){
+            vmCode.push_back("push constant 1");
+            vmCode.push_back("neg");
+        }
+        else{
+            vmCode.push_back("push constant " + reservedValues[term]);
+        }
     }
 }
 
