@@ -625,8 +625,11 @@ void CompilationEngine::callSubroutine(std::string line) {
     else{
         funcName = lineVec[0].substr(0, lineVec[0].find('('));
     }
+    std::string params;
+    params = removeBrackets(line);
+    auto paramsVec = splitString(params, ',');
 
-    vmCode.push_back("call " + funcName);
+    vmCode.push_back("call " + funcName + " " + std::to_string(paramsVec.size()));
 }
 
 void CompilationEngine::compileLet() {
