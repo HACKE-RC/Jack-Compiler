@@ -71,12 +71,12 @@ private:
     void compileVarDec();
     void compileStatement();
     void compileSubroutine();
+    void compileClassVarDec();
     void compileParameterList();
     void compileSubroutineBody();
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
-    void compileClassVarDec();
     void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
@@ -90,5 +90,5 @@ private:
     static std::string removeBrackets(const std::string& str);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
-    static char isCharacterPresent(const std::string &str, const std::string &str2);
+    bool isCharacterPresent(const std::string& str1, char c);
 };

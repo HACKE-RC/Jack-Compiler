@@ -180,7 +180,7 @@ void CompilationEngine::compileVarDec() {
     tempTokens = splitString(currentLine, ' ');
 
     if ((tempTokens[0] == "var")){
-        if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
+//        if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
             std::string variables = currentLine.substr(currentLine.find(tempTokens[2]));
             variables = clearName(variables);
             variables.erase(std::remove(variables.begin(), variables.end(), ' '), variables.end());
@@ -209,11 +209,11 @@ void CompilationEngine::compileVarDec() {
 
             compileVarDec();
         }
-        else{
-            vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
-            return;
-        }
-    }
+//        else{
+//            vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
+//            return;
+//        }
+//    }
     else{
         vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
         return;
@@ -262,6 +262,11 @@ void CompilationEngine::compileSubroutineBody() {
        vmCode.push_back("push constant " + std::to_string(classSymbolTable.count("field")));
        vmCode.push_back("call Memory.alloc 1");
        vmCode.push_back("pop pointer 0");
+    }
+    else if (m_currentSubroutineDecType == "method"){
+        subroutineSymbolTable.insert("this", m_currentClassName, "argument");
+        vmCode.push_back("push argument 0");
+        vmCode.push_back("pop pointer 0");
     }
 
     while (!(getNthToken(m_currentLine).starts_with("}"))){
@@ -399,13 +404,13 @@ bool CompilationEngine::isNumber(char &ch) {
     return false;
 }
 
-char CompilationEngine::isCharacterPresent(const std::string& str1, const std::string& str2) {
-    for (auto c: str2){
-        if (str2.find(c)){
-            return c;
+bool CompilationEngine::isCharacterPresent(const std::string &str1, char c) {
+    for (auto x: str1){
+        if (c == x){
+            return true;
         }
     }
-    return ' ';
+    return false;
 }
 
 void CompilationEngine::compileExpressionList(std::string expressions) {
@@ -651,10 +656,25 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
 void CompilationEngine::callSubroutine(std::string line) {
     CODE lineVec = splitString(line, ' ');
     std::string funcName;
+    int objAddition = 0;
 
     if (lineVec[0] == "do"){
         funcName = lineVec[1];
         funcName = lineVec[1].substr(0,  funcName.find('('));
+        if (isCharacterPresent(funcName, '.')){
+            std::string objName = funcName.substr(0, funcName.find('.'));
+            funcName = funcName.substr(funcName.find('.') + 1);
+            if (JackTokenizer::isValid(validVarTypes, objName)){
+                std::cerr << "Cannot use '.' operator on predefined types." << std::endl;
+            }
+            else if (subroutineSymbolTable.index(objName.c_str()) != -1){
+                if (!(JackTokenizer::isValid(validVarTypes, objName))){
+                    vmCode.push_back("push " + subroutineSymbolTable.kind(objName) + " " + std::to_string(subroutineSymbolTable.index(objName.c_str())));
+                    funcName = subroutineSymbolTable.type(objName) + "." + funcName;
+                    objAddition = 1;
+                }
+            }
+        }
     }
     else{
         funcName = lineVec[0].substr(0, lineVec[0].find('('));
@@ -663,7 +683,7 @@ void CompilationEngine::callSubroutine(std::string line) {
     params = removeBrackets(line);
     auto paramsVec = splitString(params, ',');
 
-    vmCode.push_back("call " + funcName + " " + std::to_string(paramsVec.size()));
+    vmCode.push_back("call " + funcName + " " + std::to_string(paramsVec.size() + objAddition));
 }
 
 void CompilationEngine::compileLet() {
@@ -861,3 +881,4 @@ void CompilationEngine::removeTabs(std::vector<std::string>& string_vector) {
         }
     }
 }
+
