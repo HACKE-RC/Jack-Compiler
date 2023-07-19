@@ -19,6 +19,9 @@ CompilationEngine::CompilationEngine(std::string fName) {
     }
 }
 
+// make methods work
+// make multiple files work together
+
 void CompilationEngine::compileClass() {
 
     if (isValidName(tempTokens[1])){
@@ -109,7 +112,7 @@ void CompilationEngine::compileSubroutine() {
 //                m_currentSubroutineDecType = tempTokens[0];
 
                 m_currentSubroutineDecType = tempTokens[0];
-                m_currentSubroutineDef = tempTokens[0] + " " + m_currentClassName + "." + tempTokens[2] ;
+                m_currentSubroutineDef = "function " + m_currentClassName + "." + tempTokens[2] ;
                 vmCode.push_back(m_currentSubroutineDef);
                 m_funcNameIndex = vmCode.size() - 1;
 

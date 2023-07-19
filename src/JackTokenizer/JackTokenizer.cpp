@@ -69,15 +69,20 @@ void JackTokenizer::cleanCode() {
             }
 
         }
-
+        if (token.empty()){
+            continue;
+        }
         if (token.starts_with("//") || token.empty()) {continue;}
 
         if (token.starts_with("/**") ) {
             skip = true;
-            continue;
+            if ((token.find("*/") != std::string::npos)){
+                skip = false;
+            }
+           continue;
         }
 
-        if ((token.starts_with("*/")) || (token.ends_with("*/"))){
+        if ((token.find("*/") != std::string::npos)){
             skip = false;
             continue;
         }
