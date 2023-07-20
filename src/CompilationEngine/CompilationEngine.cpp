@@ -855,7 +855,10 @@ void CompilationEngine::compileIf() {
     if (inlineIf){
         currentLine = currentLine.substr(currentLine.find('{')+1, currentLine.find('}') - currentLine.find('{')-1);
         currentLine = clearName(currentLine);
+        vmCode.push_back("if-goto " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
         compileStatement(currentLine);
+        vmCode.push_back("label " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        m_continueIfLabelCount++;
         return;
     }
 
