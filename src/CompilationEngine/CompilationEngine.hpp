@@ -40,7 +40,7 @@ private:
     std::string CONTINUE_IF_LABEL_PREFIX = "LABEL_CONTINUE_IF_";
     std::string CONTINUE_WHILE_LABEL_PREFIX = "LABEL_CONTINUE_WHILE_";
     std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";
-
+    std::string m_outfName;
 private:
     CODE tempTokens;
     CODE m_code;

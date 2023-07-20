@@ -2,25 +2,56 @@
 #include <utility>
 
 CompilationEngine::CompilationEngine(std::string fName) {
-    JackTokenizer tokenizer(std::move(fName), "test.tst");
-    tokenizer.cleanCode();
-    m_code = tokenizer.getAllCodeVector();
-    removeTabs(m_code);
-    m_currentLine = 0;
-    tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+    std::string fName2 = fName;
 
-    while(tempTokens.empty()){
-        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-        m_currentLine++;
+
+    CODE code;
+    std::vector<std::string> fNames = {};
+    fName = fName2;
+    if (std::filesystem::is_directory(fName.c_str())){
+
+        for (const auto& entry: std::filesystem::directory_iterator(fName.c_str())){
+            if (std::filesystem::is_regular_file(entry)){
+                auto filename = entry.path().filename().string();
+                auto full_filename = fName.append("\\" + filename);
+                if (filename.ends_with(".jack") && std::find(fNames.begin(), fNames.end(), full_filename) == fNames.end()){
+                    fNames.push_back(full_filename);
+                }
+            }
+        }
+
     }
-//
-    if (tempTokens[0] == "class") {
-        compileClass();
+    else{
+        fNames.push_back(fName);
+    }
+
+
+    for (const auto& file: fNames){
+        std::ifstream fStream(file);
+        std::string fData;
+
+        if (!fStream.good()){
+            std::cerr << "ERR: " << "File not found!" << std::endl;
+            std::exit(-1);
+        }
+
+        JackTokenizer tokenizer(std::move(fName), "test.tst");
+        tokenizer.cleanCode();
+        m_code = tokenizer.getAllCodeVector();
+        removeTabs(m_code);
+        m_currentLine = 0;
+        tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+
+        while(tempTokens.empty()){
+            tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+            m_currentLine++;
+        }
+
+        if (tempTokens[0] == "class") {
+            compileClass();
+        }
     }
 }
-
-// make methods work
-// make multiple files work together
 
 void CompilationEngine::compileClass() {
 
@@ -972,7 +1003,6 @@ void CompilationEngine::compileWhile() {
     m_whileLabelCount++;
 
     vmCode.push_back("label " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
-//    --m_continueWhileLabelCount;
     m_currentLine++;
 }
 
