@@ -69,7 +69,7 @@ private:
     void compileWhile();
     void compileReturn();
     void compileVarDec();
-    void compileStatement();
+    void compileStatement(const std::string& line);
     void compileSubroutine();
     void compileClassVarDec();
     void compileParameterList();
@@ -87,8 +87,8 @@ private:
     void compileExpressionList(std::string expressions);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
-    static std::string removeBrackets(const std::string& str);
+    bool isCharacterPresent(const std::string& str1, char c);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
-    bool isCharacterPresent(const std::string& str1, char c);
+    static std::string removeBrackets(const std::string& str, bool inLine);
 };
