@@ -35,9 +35,9 @@ void CompilationEngine::compileClass() {
     m_currentLine++;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
-    if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
+//    if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
         compileClassVarDec();
-    }
+//    }
 
     if (tempTokens.back() == "{"){
         insideClass = true;
@@ -56,7 +56,7 @@ void CompilationEngine::compileClassVarDec() {
     tempTokens = tokens;
 
     if (tokens[0] == "static" || tokens[0] == "field") {
-        if (JackTokenizer::isValid(validVarTypes, tokens[1])){
+//        if (JackTokenizer::isValid(validVarTypes, tokens[1])){
             if (isValidName(clearName(tokens[2]))){
                 m_currentLine++;
 
@@ -82,7 +82,7 @@ void CompilationEngine::compileClassVarDec() {
 //                m_currentLine++;
                 compileClassVarDec();
             }
-        }
+//        }
 
 //        std::string token = getNthToken(m_currentLine);
 //        m_currentLine++;
@@ -92,6 +92,15 @@ void CompilationEngine::compileClassVarDec() {
     else{
         return;
     }
+}
+std::string removeNonAlphanumeric(const std::string& input) {
+    std::string result;
+    for (char c : input) {
+        if (std::isalnum(c) || c == '_') {
+            result += c;
+        }
+    }
+    return result;
 }
 
 void CompilationEngine::compileSubroutine() {
@@ -104,19 +113,20 @@ void CompilationEngine::compileSubroutine() {
     }
 
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
-        if (JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])){
-            if (isValidName(tempTokens[2])){
+        if ((JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])) || (tempTokens[1] == m_currentClassName)){
+            std::string name = removeNonAlphanumeric(tempTokens[2]);
+            if (isValidName(name)){
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
 //                m_currentSubroutineDecType = tempTokens[0];
 
                 m_currentSubroutineDecType = tempTokens[0];
-                m_currentSubroutineDef = "function " + m_currentClassName + "." + tempTokens[2] ;
+                m_currentSubroutineDef = "function " + m_currentClassName + "." + name ;
                 vmCode.push_back(m_currentSubroutineDef);
                 m_funcNameIndex = vmCode.size() - 1;
 
-                subroutineTypes[m_currentClassName + "." + tempTokens[2]] = tempTokens[1];
+                subroutineTypes[m_currentClassName + "." + name] = tempTokens[1];
                 compileParameterList();
                 m_currentLine++;
                 compileSubroutineBody();
@@ -659,20 +669,35 @@ void CompilationEngine::callSubroutine(std::string line) {
     int objAddition = 0;
 
     if (lineVec[0] == "do"){
-        funcName = lineVec[1];
-        funcName = lineVec[1].substr(0,  funcName.find('('));
-        if (isCharacterPresent(funcName, '.')){
-            std::string objName = funcName.substr(0, funcName.find('.'));
-            funcName = funcName.substr(funcName.find('.') + 1);
+        std::string funcName2 = lineVec[1];
+        funcName2 = lineVec[1].substr(0,  funcName2 .find('('));
+        if (isCharacterPresent(funcName2 , '.')){
+            std::string objName = funcName2 .substr(0, funcName2 .find('.'));
+            funcName2 = funcName2.substr(funcName2 .find('.') + 1);
             if (JackTokenizer::isValid(validVarTypes, objName)){
                 std::cerr << "Cannot use '.' operator on predefined types." << std::endl;
             }
-            else if (subroutineSymbolTable.index(objName.c_str()) != -1){
-                if (!(JackTokenizer::isValid(validVarTypes, objName))){
-                    vmCode.push_back("push " + subroutineSymbolTable.kind(objName) + " " + std::to_string(subroutineSymbolTable.index(objName.c_str())));
-                    funcName = subroutineSymbolTable.type(objName) + "." + funcName;
-                    objAddition = 1;
+            else if ((subroutineSymbolTable.index(objName.c_str()) != -1) || (classSymbolTable.index(objName.c_str())) != -1) {
+                if ((!(JackTokenizer::isValid(validVarTypes, objName)))) {
+                    if (subroutineSymbolTable.index(objName.c_str()) != -1) {
+                        vmCode.push_back("push " + subroutineSymbolTable.kind(objName) + " " +
+                                         std::to_string(subroutineSymbolTable.index(objName.c_str())));
+                        funcName2 = subroutineSymbolTable.type(objName) + "." + funcName2;
+                        funcName = clearName(funcName2);
+                        objAddition = 1;
+                    }
+                    else {
+                        vmCode.push_back("push " + classSymbolTable.kind(objName) + " " +
+                        std::to_string(classSymbolTable.index(objName.c_str())));
+                        funcName2 = classSymbolTable.type(objName) + "." + funcName2;
+                        funcName = clearName(funcName2);
+                        objAddition = 1;
+                    }
                 }
+            }
+            else{
+                funcName = lineVec[1].substr(0, lineVec[1].find('('));
+                funcName = clearName(funcName);
             }
         }
     }
@@ -703,7 +728,8 @@ void CompilationEngine::compileLet() {
     if (std::regex_search(value, callPattern)){
         if (value.ends_with(");")){
             compileExpressionList(getNthToken(m_currentLine));
-            callSubroutine(tempTokens[3]);
+            std::string funcName = value.substr(0, value.find(';'));
+            callSubroutine(funcName);
         }
     }
     else{
