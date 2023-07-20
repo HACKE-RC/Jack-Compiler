@@ -62,12 +62,12 @@ private:
     int m_funcNameIndex;
 
 private:
-    void compileDo();
+    void compileDo(const std::string& line);
     void compileIf();
-    void compileLet();
+    void compileLet(const std::string& line);
     void compileClass();
     void compileWhile();
-    void compileReturn();
+    void compileReturn(const std::string& line);
     void compileVarDec();
     void compileStatement(const std::string& line);
     void compileSubroutine();
