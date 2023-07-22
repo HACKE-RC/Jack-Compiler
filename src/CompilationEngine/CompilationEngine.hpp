@@ -13,7 +13,6 @@ static CODE validVarTypes = {"int", "char", "boolean"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
 static CODE validStatementInitials = {"var", "let", "do", "if", "else", "while", "return"};
 static std::vector<char> validPositiveInt = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-static std::vector<std::string> validNegativeInt = {"-1", "-2", "-3", "-4", "-5", "6", "7", "8", "9"};
 
 class CompilationEngine {
 public:
@@ -62,14 +61,10 @@ private:
     int m_funcNameIndex;
 
 private:
-    void compileDo(const std::string& line);
     void compileIf();
-    void compileLet(const std::string& line);
     void compileClass();
     void compileWhile();
-    void compileReturn(const std::string& line);
     void compileVarDec();
-    void compileStatement(const std::string& line);
     void compileSubroutine();
     void compileClassVarDec();
     void compileParameterList();
@@ -80,9 +75,13 @@ private:
     void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
+    void compileDo(const std::string& line);
+    void compileLet(const std::string& line);
     static bool isValidName(std::string name);
     void compileExpression(std::string &expr);
+    void compileReturn(const std::string& line);
     static std::string clearName(std::string name);
+    void compileStatement(const std::string& line);
     static CODE getExpressionVector(std::string expr);
     void compileExpressionList(std::string expressions);
     static long long countParameters(CODE parameterList);

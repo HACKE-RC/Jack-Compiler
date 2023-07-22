@@ -4,7 +4,6 @@
 CompilationEngine::CompilationEngine(std::string fName) {
     std::string fName2 = fName;
 
-
     CODE code;
     std::vector<std::string> fNames = {};
     fName = fName2;
@@ -66,9 +65,7 @@ void CompilationEngine::compileClass() {
     m_currentLine++;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
-//    if (JackTokenizer::isValid(validVarDecs, tempTokens[0])) {
         compileClassVarDec();
-//    }
 
     if (tempTokens.back() == "{"){
         insideClass = true;
@@ -87,7 +84,6 @@ void CompilationEngine::compileClassVarDec() {
     tempTokens = tokens;
 
     if (tokens[0] == "static" || tokens[0] == "field") {
-//        if (JackTokenizer::isValid(validVarTypes, tokens[1])){
             if (isValidName(clearName(tokens[2]))){
                 m_currentLine++;
 
@@ -110,15 +106,9 @@ void CompilationEngine::compileClassVarDec() {
                 }
                 currentLine = getNthToken(m_currentLine);
                 tempTokens = JackTokenizer::tokenizeCode(currentLine);
-//                m_currentLine++;
                 compileClassVarDec();
             }
-//        }
 
-//        std::string token = getNthToken(m_currentLine);
-//        m_currentLine++;
-//
-//        compileClassVarDec();
     }
     else{
         return;
@@ -150,7 +140,6 @@ void CompilationEngine::compileSubroutine() {
                 if (tempTokens.back() == "{"){
                     insideSubroutine = true;
                 }
-//                m_currentSubroutineDecType = tempTokens[0];
 
                 m_currentSubroutineDecType = tempTokens[0];
                 m_currentSubroutineDef = "function " + m_currentClassName + "." + name ;
@@ -221,7 +210,6 @@ void CompilationEngine::compileVarDec() {
     tempTokens = splitString(currentLine, ' ');
 
     if ((tempTokens[0] == "var")){
-//        if (JackTokenizer::isValid(validVarTypes, tempTokens[1])){
             std::string variables = currentLine.substr(currentLine.find(tempTokens[2]));
             variables = clearName(variables);
             variables.erase(std::remove(variables.begin(), variables.end(), ' '), variables.end());
@@ -250,11 +238,6 @@ void CompilationEngine::compileVarDec() {
 
             compileVarDec();
         }
-//        else{
-//            vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
-//            return;
-//        }
-//    }
     else{
         vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
         return;
@@ -332,6 +315,10 @@ void CompilationEngine::compileStatement(const std::string& line = "") {
     else{
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
         vmCode.push_back("//" + getNthToken(m_currentLine));
+    }
+    if (tempTokens.empty()){
+        m_currentLine++;
+        return;
     }
     if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
         if (tempTokens[0] == "do") {
@@ -421,6 +408,11 @@ void CompilationEngine::compileExpression(std::string& expr) {
         }
 
         vmCode.push_back("not");
+    }
+    else if (exprVec[0].starts_with("(")){
+        expr = expr.substr(1);
+        compileExpression(expr);
+        return;
     }
     else{
         compileTerm(exprVec[0]);
@@ -599,7 +591,7 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
     expr.erase(std::remove(expr.begin(), expr.end(), ' '), expr.end());
 
     for (char expression: expr){
-        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') || (expression == '&') || (expression == '|') || (expression == '<') || (expression == '>') || (expression == '=') || (expression == '~')){
+        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') || (expression == '&') || (expression == '|') || (expression == '<') || (expression == '>') || (expression == '=') || (expression == '~') || (expression == '(') || (expression == ')')){
             sepIndex.push_back(k);
         }
         k++;
@@ -631,11 +623,16 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
         if (!(expression.empty())){
             exprVec.push_back(clearName(expression));
             if (!(op.empty())){
-                exprVec.push_back(clearName(op));
+                if (op != ")" || op != "("){
+                    exprVec.push_back(clearName(op));
+                }
             }
             else{
                 break;
             }
+        }
+        else if (expression.empty() && !(op.empty())){
+            exprVec.push_back(clearName(op));
         }
         else if (op == "~"){
             exprVec.push_back(op);
@@ -645,6 +642,8 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
         op = "";
         start = index + 1;
     }
+    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), ")"), exprVec.end());
+    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), "("), exprVec.end());
     return exprVec;
 }
 
@@ -935,21 +934,15 @@ void CompilationEngine::compileIf() {
     ++m_ifLabelCount;
     vmCode.push_back("if-goto " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
 
-//    if ()
-
     while((std::find(tempTokens.begin(), tempTokens.end(), "else{") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") == tempTokens.end())){
         m_currentLine++;
         if ((std::find(tempTokens.begin(), tempTokens.end(), "else{") != tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") != tempTokens.end())){
             break;
         }
-//        else{
-//            std::string initial = getNthToken(m_currentLine);
-//            auto k = JackTokenizer::tokenizeCode(initial);
-//            if (std::find(validStatementInitials.begin(), validStatementInitials.end(), k[0]) != validStatementInitials.end()){
-//
-//            }
-//            break;
-//        }
+        else if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])){
+            break;
+        }
+
         compileStatement();
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
@@ -986,7 +979,6 @@ void CompilationEngine::compileWhile() {
     int contCount = ++m_whileLabelCount;
     int contCount2 = ++m_continueWhileLabelCount;
 
-//    ++m_whileLabelCount;
     vmCode.push_back("label " + WHILE_LABEL_PREFIX + std::to_string(contCount));
     compileExpression(expression);
     vmCode.push_back("not");
@@ -1015,4 +1007,3 @@ void CompilationEngine::removeTabs(std::vector<std::string>& string_vector) {
         }
     }
 }
-
