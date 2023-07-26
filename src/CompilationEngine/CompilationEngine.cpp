@@ -388,7 +388,7 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
 void CompilationEngine::compileExpression(std::string& expr) {
     CODE exprVec;
     expr = clearName(expr);
-    prioritizeBrackets(expr);
+    expr = prioritizeBrackets(expr);
     exprVec = getExpressionVector(expr);
     exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
         return string.empty();
@@ -616,16 +616,19 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
 
             expression = expr.substr(start, index - start);
             op = expr.substr(index,1);
+
+
         }
         else{
             expression = expr.substr(start, expr.length());
         }
+
         if (!(expression.empty())){
             exprVec.push_back(clearName(expression));
             if (!(op.empty())){
-                if (op != ")" || op != "("){
-                    exprVec.push_back(clearName(op));
-                }
+//                if (op != ")" || op != "("){
+//                    exprVec.push_back(clearName(op));
+//                }
             }
             else{
                 break;
@@ -642,8 +645,8 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
         op = "";
         start = index + 1;
     }
-    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), ")"), exprVec.end());
-    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), "("), exprVec.end());
+//    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), ")"), exprVec.end());
+//    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), "("), exprVec.end());
     return exprVec;
 }
 
@@ -1006,4 +1009,50 @@ void CompilationEngine::removeTabs(std::vector<std::string>& string_vector) {
             i--;
         }
     }
+}
+
+CODE CompilationEngine::depthSplit(std::string expression){
+    int depth = 0;
+    int index = 0;
+    bool foundFirstCloseBracket = false;
+
+    CODE exprVec;
+    std::string choppedStr;
+    int start = 0;
+    expression.erase(std::remove_if(expression.begin(), expression.end(), ::isspace), expression.end());
+
+    for (char &c: expression){
+        if (c == '('){
+            if (foundFirstCloseBracket){
+                auto temp = expression.substr(start, index);
+                temp = temp.substr(start, temp.find_last_of(')'));
+                auto op = expression.substr(index-1, 1);
+                exprVec.push_back(temp);
+                exprVec.push_back(op);
+                expression = expression.substr(index);
+                CODE k = depthSplit(expression);
+                exprVec.insert(exprVec.end(), k.begin(), k.end());
+                return exprVec;
+            }
+            depth++;
+        }
+        else if ((c == ')') && (!(foundFirstCloseBracket))){
+            foundFirstCloseBracket = true;
+            depth--;
+        }
+        else if (c==')'){
+            depth--;
+        }
+        index++;
+    }
+
+   if (index!=0) {
+       choppedStr = expression.substr(0, index);
+       exprVec.push_back(choppedStr);
+   }
+   else{
+       exprVec.push_back(expression);
+   }
+
+    return exprVec;
 }

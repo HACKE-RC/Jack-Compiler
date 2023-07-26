@@ -13,6 +13,7 @@ static CODE validVarTypes = {"int", "char", "boolean"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
 static CODE validStatementInitials = {"var", "let", "do", "if", "else", "while", "return"};
 static std::vector<char> validPositiveInt = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+static CODE validBooleanOp = {"&", "|"};
 
 class CompilationEngine {
 public:
@@ -60,8 +61,9 @@ private:
     std::string m_currentSubroutineDecType;
     int m_funcNameIndex;
 
-private:
+public:
     void compileIf();
+    CODE depthSplit(std::string expression);
     void compileClass();
     void compileWhile();
     void compileVarDec();

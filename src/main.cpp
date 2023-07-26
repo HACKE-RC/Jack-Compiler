@@ -13,25 +13,12 @@ int main(int argc, char* argv[]){
 //    tokenizer.cleanCode();
 //    tokenizer.tokenizeAllCode();
     CompilationEngine compiler(argv[1]);
-//    std::string k = CompilationEngine::removeBrackets("do Main.fillMemory(8001, 15, -1);");
-//
-//    auto s = compiler.prioritizeBrackets(k);
-//    compiler.compileExpressionList(s);
-//    auto z = compiler.splitString(s, ' ');
-//
-//    for (auto i : z){
-//        i.erase(std::remove(i.begin(), i.end(), ','), i.end());
-//        compiler.compileExpression(i);
-//        CompilationEngine::getExpressionVector(i);
-//    }
-//
-//    compiler.callSubroutine("do Main.fillMemory();");
-//    for (auto o: compiler.vmCode){
-//        std::cout << o << std::endl;
-//    }
-//    compiler.compileDo("do Main.fillMemory(8001, 15, -1);");
-
-    //    compiler.
+    compiler.depthSplit("(((y + size) < 254) & ((x + size) < 510))");
+    CODE n = compiler.depthSplit("1 + 2 * (1+2)");
+    CODE c = compiler.depthSplit("x + y");
+    if (c.size() == 1){
+        c = CompilationEngine::getExpressionVector("x+ y");
+    }
 
     return 0;
 }
