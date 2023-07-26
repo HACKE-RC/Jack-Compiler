@@ -83,7 +83,7 @@ public:
     void compileExpression(std::string &expr);
     void compileReturn(const std::string& line);
     static std::string clearName(std::string name);
-    void compileStatement(const std::string& line);
+    void compileStatement(std::string line);
     static CODE getExpressionVector(std::string expr);
     void compileExpressionList(std::string expressions);
     static long long countParameters(CODE parameterList);

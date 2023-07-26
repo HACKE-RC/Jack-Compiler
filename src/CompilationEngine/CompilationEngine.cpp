@@ -306,13 +306,14 @@ void CompilationEngine::compileSubroutineBody() {
     compileSubroutine();
 }
 
-void CompilationEngine::compileStatement(const std::string& line = "") {
+void CompilationEngine::compileStatement(std::string line = "") {
     if (!(line.empty())){
         tempTokens = JackTokenizer::tokenizeCode(line);
         vmCode.push_back("//" + line);
     }
     else{
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+        line = getNthToken(m_currentLine);
         vmCode.push_back("//" + getNthToken(m_currentLine));
     }
     if (tempTokens.empty()){
@@ -335,6 +336,10 @@ void CompilationEngine::compileStatement(const std::string& line = "") {
         else if (tempTokens[0] == "while"){
             compileWhile();
         }
+    }
+//    fix this
+    else if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])){
+        compileSubroutine();
     }
 }
 
@@ -397,12 +402,6 @@ void CompilationEngine::compileExpression(std::string& expr) {
         return string.empty();
     }), exprVec.end());
     }
-//    else{
-//        for (auto &element:  exprVec){
-//            compileExpression(element);
-//            return;
-//        }
-//    }
 
 
     if (exprVec[0] == "-"){
@@ -942,13 +941,31 @@ void CompilationEngine::compileIf() {
     ++m_ifLabelCount;
     vmCode.push_back("if-goto " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
 
+    bool trigger = false;
     while((std::find(tempTokens.begin(), tempTokens.end(), "else{") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") == tempTokens.end())){
+       if (trigger){
+           vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+           m_ifLabelCount++;
+           return;
+       }
         m_currentLine++;
         if ((std::find(tempTokens.begin(), tempTokens.end(), "else{") != tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") != tempTokens.end())){
             break;
         }
         else if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])){
-            break;
+            if (tempTokens[0].find("else") != std::string::npos){
+                insideIf = true;
+                break;
+            }
+
+
+            tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+//            return;
+        }
+
+        if (std::find(tempTokens.begin(), tempTokens.end(), "}") != tempTokens.end()){
+           trigger  = true;
+           continue;
         }
 
         compileStatement();
