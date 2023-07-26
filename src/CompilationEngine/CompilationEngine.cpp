@@ -18,7 +18,6 @@ CompilationEngine::CompilationEngine(std::string fName) {
                 }
             }
         }
-
     }
     else{
         fNames.push_back(fName);
@@ -387,12 +386,24 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
 
 void CompilationEngine::compileExpression(std::string& expr) {
     CODE exprVec;
+
     expr = clearName(expr);
     expr = prioritizeBrackets(expr);
-    exprVec = getExpressionVector(expr);
-    exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
+
+    exprVec = depthSplit(expr);
+    if (exprVec.size() == 1){
+        exprVec = getExpressionVector(expr);
+        exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
         return string.empty();
     }), exprVec.end());
+    }
+//    else{
+//        for (auto &element:  exprVec){
+//            compileExpression(element);
+//            return;
+//        }
+//    }
+
 
     if (exprVec[0] == "-"){
         compileTerm(expr);
@@ -576,6 +587,9 @@ void CompilationEngine::compileTerm(std::string term) {
             vmCode.push_back("push constant " + reservedValues[term]);
         }
     }
+    else{
+        compileExpression(term);
+    }
 }
 
 CODE CompilationEngine::getExpressionVector(std::string expr) {
@@ -586,12 +600,13 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
 
     if (expr.length() == 1){
         exprVec.push_back(expr);
+        return exprVec;
     }
 
     expr.erase(std::remove(expr.begin(), expr.end(), ' '), expr.end());
 
     for (char expression: expr){
-        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') || (expression == '&') || (expression == '|') || (expression == '<') || (expression == '>') || (expression == '=') || (expression == '~') || (expression == '(') || (expression == ')')){
+        if ((expression == '+') || (expression == '-') || (expression == '*') || (expression == '/') || (expression == '&') || (expression == '|') || (expression == '<') || (expression == '>') || (expression == '=') || (expression == '~')){
             sepIndex.push_back(k);
         }
         k++;
@@ -616,26 +631,18 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
 
             expression = expr.substr(start, index - start);
             op = expr.substr(index,1);
-
-
         }
         else{
             expression = expr.substr(start, expr.length());
         }
-
         if (!(expression.empty())){
             exprVec.push_back(clearName(expression));
             if (!(op.empty())){
-//                if (op != ")" || op != "("){
-//                    exprVec.push_back(clearName(op));
-//                }
+                exprVec.push_back(clearName(op));
             }
             else{
                 break;
             }
-        }
-        else if (expression.empty() && !(op.empty())){
-            exprVec.push_back(clearName(op));
         }
         else if (op == "~"){
             exprVec.push_back(op);
@@ -645,8 +652,6 @@ CODE CompilationEngine::getExpressionVector(std::string expr) {
         op = "";
         start = index + 1;
     }
-//    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), ")"), exprVec.end());
-//    exprVec.erase(std::remove(exprVec.begin(), exprVec.end(), "("), exprVec.end());
     return exprVec;
 }
 

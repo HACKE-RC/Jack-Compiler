@@ -63,7 +63,6 @@ private:
 
 public:
     void compileIf();
-    CODE depthSplit(std::string expression);
     void compileClass();
     void compileWhile();
     void compileVarDec();
@@ -77,6 +76,7 @@ public:
     void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
+    CODE depthSplit(std::string expression);
     void compileDo(const std::string& line);
     void compileLet(const std::string& line);
     static bool isValidName(std::string name);
