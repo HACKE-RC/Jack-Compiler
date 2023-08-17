@@ -59,7 +59,7 @@ private:
 private:
     std::string m_currentSubroutineDef;
     std::string m_currentSubroutineDecType;
-    int m_funcNameIndex;
+    int m_funcNameIndex{};
 
 public:
     void compileIf();

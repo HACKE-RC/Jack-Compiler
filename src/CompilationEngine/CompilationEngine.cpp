@@ -1,5 +1,6 @@
 #include "CompilationEngine.hpp"
 #include <utility>
+#include <source_location>
 
 CompilationEngine::CompilationEngine(std::string fName) {
     std::string fName2 = fName;
@@ -12,7 +13,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
         for (const auto& entry: std::filesystem::directory_iterator(fName.c_str())){
             if (std::filesystem::is_regular_file(entry)){
                 auto filename = entry.path().filename().string();
-                auto full_filename = fName.append("\\" + filename);
+                auto full_filename = fName + "\\" + filename;
                 if (filename.ends_with(".jack") && std::find(fNames.begin(), fNames.end(), full_filename) == fNames.end()){
                     fNames.push_back(full_filename);
                 }
@@ -29,11 +30,16 @@ CompilationEngine::CompilationEngine(std::string fName) {
         std::string fData;
 
         if (!fStream.good()){
+            std::cout << file << std::endl;
             std::cerr << "ERR: " << "File not found!" << std::endl;
             std::exit(-1);
         }
+        else{
+            fStream.clear();
+            fStream.close();
+        }
 
-        JackTokenizer tokenizer(std::move(fName), "test.tst");
+        JackTokenizer tokenizer(file, file);
         tokenizer.cleanCode();
         m_code = tokenizer.getAllCodeVector();
         removeTabs(m_code);
@@ -135,13 +141,13 @@ void CompilationEngine::compileSubroutine() {
     if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])) {
         if ((JackTokenizer::isValid(validSubroutineTypes, tempTokens[1])) || (tempTokens[1] == m_currentClassName)){
             std::string name = removeNonAlphanumeric(tempTokens[2]);
-            if (isValidName(name)){
-                if (tempTokens.back() == "{"){
+            if (isValidName(name)) {
+                if (tempTokens.back() == "{") {
                     insideSubroutine = true;
                 }
 
                 m_currentSubroutineDecType = tempTokens[0];
-                m_currentSubroutineDef = "function " + m_currentClassName + "." + name ;
+                m_currentSubroutineDef = "function " + m_currentClassName + "." + name;
                 vmCode.push_back(m_currentSubroutineDef);
                 m_funcNameIndex = vmCode.size() - 1;
 
@@ -320,6 +326,7 @@ void CompilationEngine::compileStatement(std::string line = "") {
         m_currentLine++;
         return;
     }
+
     if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
         if (tempTokens[0] == "do") {
             compileDo(line);
@@ -337,7 +344,6 @@ void CompilationEngine::compileStatement(std::string line = "") {
             compileWhile();
         }
     }
-//    fix this
     else if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])){
         compileSubroutine();
     }
@@ -431,6 +437,9 @@ void CompilationEngine::compileExpression(std::string& expr) {
     if (exprVec.size() > 1){
         int n = 1;
         while(JackTokenizer::isValid(validOperations, exprVec[n])){
+            if (n+1 > exprVec.size()){
+                return;
+            }
             compileExpression(exprVec[n+1]);
 
             if (exprVec[n] == "+"){
@@ -522,14 +531,9 @@ void CompilationEngine::compileExpressionList(std::string expressions) {
             std::vector<std::string>::iterator startIt = exprVec.begin() + start;
             std::vector<std::string>::iterator endIt = exprVec.begin() + index;
 
-            try {
-                expression.clear();
-                for (auto it = startIt; it != endIt; ++it) {
-                    expression += *it;
-                }
-            } catch (const std::exception& e) {
-                std::cout << "error" << std::endl;
-                break;
+            expression.clear();
+            for (auto it = startIt; it != endIt; ++it) {
+                expression += *it;
             }
         } else {
             if (index != -1) {
@@ -912,6 +916,7 @@ std::vector<std::string> CompilationEngine::splitString(std::string& str, char d
 void CompilationEngine::compileIf() {
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
+
     std::string expression;
     bool insideIf = false;
     bool inlineIf = false;
