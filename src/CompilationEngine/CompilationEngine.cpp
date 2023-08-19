@@ -2,6 +2,8 @@
 #include <utility>
 #include <source_location>
 
+VMWriter vmFile;
+
 CompilationEngine::CompilationEngine(std::string fName) {
     std::string fName2 = fName;
 
@@ -24,7 +26,6 @@ CompilationEngine::CompilationEngine(std::string fName) {
         fNames.push_back(fName);
     }
 
-
     for (const auto& file: fNames){
         std::ifstream fStream(file);
         std::string fData;
@@ -39,6 +40,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
             fStream.close();
         }
 
+        vmFile = VMWriter(file + ".vm");
         JackTokenizer tokenizer(file, file);
         tokenizer.cleanCode();
         m_code = tokenizer.getAllCodeVector();
@@ -55,6 +57,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
             compileClass();
         }
     }
+
 }
 
 void CompilationEngine::compileClass() {
@@ -70,7 +73,7 @@ void CompilationEngine::compileClass() {
     m_currentLine++;
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
-        compileClassVarDec();
+    compileClassVarDec();
 
     if (tempTokens.back() == "{"){
         insideClass = true;
@@ -134,6 +137,8 @@ void CompilationEngine::compileSubroutine() {
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
+    int totalVars;
+
     if (tempTokens.empty()){
         return;
     }
@@ -147,13 +152,15 @@ void CompilationEngine::compileSubroutine() {
                 }
 
                 m_currentSubroutineDecType = tempTokens[0];
-                m_currentSubroutineDef = "function " + m_currentClassName + "." + name;
-                vmCode.push_back(m_currentSubroutineDef);
-                m_funcNameIndex = vmCode.size() - 1;
-
                 subroutineTypes[m_currentClassName + "." + name] = tempTokens[1];
+
                 compileParameterList();
                 m_currentLine++;
+
+                totalVars = compileVarDec();
+                vmFile.writeFunction(m_currentClassName + "." + name, totalVars);
+                totalVars = 0;
+
                 compileSubroutineBody();
             }
         }
@@ -207,8 +214,12 @@ bool CompilationEngine::isValidName(std::string name) {
     return false;
 }
 
-void CompilationEngine::compileVarDec() {
+int CompilationEngine::compileVarDec() {
+/*
+ * returns the number of variables declared
+ */
 
+    int totalVars = 0;
     std::string currentLine = getNthToken(m_currentLine);
 
     currentLine = currentLine.substr(currentLine.find_first_not_of(' '));
@@ -227,6 +238,7 @@ void CompilationEngine::compileVarDec() {
                 std::string name = variableVector[i];
 
                 if (isValidName(clearName(name))) {
+                    totalVars++;
                     auto kind = tempTokens[0];
 
                     if (kind == "var"){
@@ -244,10 +256,11 @@ void CompilationEngine::compileVarDec() {
             compileVarDec();
         }
     else{
-        vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
-        return;
+//        vmFile.writeAtPos(m_funcNameIndex, m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local")));
+//        vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
+        return totalVars;
     }
-
+    return totalVars;
 }
 
 void CompilationEngine::compileParameterList() {
@@ -285,17 +298,16 @@ long long CompilationEngine::countParameters(CODE parameterList) {
 }
 
 void CompilationEngine::compileSubroutineBody() {
-    compileVarDec();
 
     if (m_currentSubroutineDecType == "constructor"){
-       vmCode.push_back("push constant " + std::to_string(classSymbolTable.count("field")));
-       vmCode.push_back("call Memory.alloc 1");
-       vmCode.push_back("pop pointer 0");
+        vmFile.writePush("constant", classSymbolTable.count("field"));
+        vmFile.writeCall("Memory.alloc", 1);
+        vmFile.writePop("pointer", 0);
     }
     else if (m_currentSubroutineDecType == "method"){
         subroutineSymbolTable.insert("this", m_currentClassName, "argument");
-        vmCode.push_back("push argument 0");
-        vmCode.push_back("pop pointer 0");
+        vmFile.writePush("argument", 0);
+        vmFile.writePop("pointer", 0);
     }
 
     while (!(getNthToken(m_currentLine).starts_with("}"))){
@@ -330,6 +342,7 @@ void CompilationEngine::compileStatement(std::string line = "") {
     if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])) {
         if (tempTokens[0] == "do") {
             compileDo(line);
+            m_currentLine++;
         }
         else if (tempTokens[0] == "let") {
             compileLet(line);
@@ -359,8 +372,7 @@ void CompilationEngine::compileDo(const std::string& line = "") {
     }
     compileExpressionList(expressions);
     callSubroutine(expressions);
-    vmCode.push_back("pop temp 0");
-    m_currentLine++;
+    vmFile.writePop("temp", 0);
 }
 
 
@@ -422,8 +434,8 @@ void CompilationEngine::compileExpression(std::string& expr) {
             expr = expr.substr(1);
             compileExpression(expr);
         }
-
-        vmCode.push_back("not");
+        vmFile.writeArithmetic("~");
+//        vmCode.push_back("not");
     }
     else if (exprVec[0].starts_with("(")){
         expr = expr.substr(1);
@@ -441,31 +453,7 @@ void CompilationEngine::compileExpression(std::string& expr) {
                 return;
             }
             compileExpression(exprVec[n+1]);
-
-            if (exprVec[n] == "+"){
-             vmCode.push_back("add");
-            }
-            else if (exprVec[n] == "-"){
-               vmCode.push_back("sub");
-            }
-            else if (exprVec[n] == "*"){
-                vmCode.push_back("call Math.multiply 2");
-            }
-            else if (exprVec[n] == "/"){
-                vmCode.push_back("call Math.divide 2");
-            }
-            else if (exprVec[n] == "="){
-                vmCode.push_back("eq");
-            }
-            else if (exprVec[n] == ">"){
-                vmCode.push_back("gt");
-            }
-            else if (exprVec[n] == "<"){
-                vmCode.push_back("lt");
-            }
-            else if (exprVec[n] == "&"){
-                vmCode.push_back("and");
-            }
+            vmFile.writeArithmetic(exprVec[n]);
          n += 2;
       }
    }
@@ -564,30 +552,34 @@ void CompilationEngine::compileTerm(std::string term) {
         term.pop_back();
     }
     if (isNumber(term)){
-        vmCode.push_back("push constant " + term);
+        vmFile.writePush("constant", std::stoi(term));
     }
     else if ((subroutineSymbolTable.index(clearName(term).c_str()) != -1) || (classSymbolTable.index(clearName(term).c_str()) != -1)){
         if (subroutineSymbolTable.index(clearName(term).c_str()) != -1){
-            vmCode.push_back("push " + subroutineSymbolTable.kind(term) + " " + std::to_string(subroutineSymbolTable.index(term.c_str())));
+            vmFile.writePush(subroutineSymbolTable.kind(clearName(term)), subroutineSymbolTable.index(clearName(term).c_str()));
         }
         else if (classSymbolTable.index(term.c_str()) != -1){
-            vmCode.push_back("push " + classSymbolTable.kind(term) + " " + std::to_string(classSymbolTable.index(term.c_str())));
+            vmFile.writePush(classSymbolTable.kind(term),  classSymbolTable.index(term.c_str()));
         }
     }
     else if ((term.starts_with('(')) && (term.ends_with(')'))){
         compileExpression(term);
     }
     else if (term[0] == '-'){
-        vmCode.push_back("push constant " + term.substr(1));
-        vmCode.push_back("neg");
+        vmFile.writePush("constant", stoi(term.substr(1)));
+//        vmCode.push_back("push constant " + term.substr(1));
+//        vmCode.push_back("neg");
+        vmFile.writeNeg();
     }
     else if (reservedValues.find(term) != reservedValues.end()){
         if (reservedValues[term] == "-1"){
-            vmCode.push_back("push constant 1");
-            vmCode.push_back("neg");
+            vmFile.writePush("constant", 1);
+//            vmCode.push_back("push constant 1");
+//            vmCode.push_back("neg");
+            vmFile.writeNeg();
         }
         else{
-            vmCode.push_back("push constant " + reservedValues[term]);
+            vmFile.writePush("constant", stoi(reservedValues[term]));
         }
     }
     else{
@@ -747,15 +739,14 @@ void CompilationEngine::callSubroutine(std::string line) {
             else if ((subroutineSymbolTable.index(objName.c_str()) != -1) || (classSymbolTable.index(objName.c_str())) != -1) {
                 if ((!(JackTokenizer::isValid(validVarTypes, objName)))) {
                     if (subroutineSymbolTable.index(objName.c_str()) != -1) {
-                        vmCode.push_back("push " + subroutineSymbolTable.kind(objName) + " " +
-                                         std::to_string(subroutineSymbolTable.index(objName.c_str())));
+                        vmFile.writePush(subroutineSymbolTable.kind(objName),  subroutineSymbolTable.index(objName.c_str()));
                         funcName2 = subroutineSymbolTable.type(objName) + "." + funcName2;
                         funcName = clearName(funcName2);
                         objAddition = 1;
                     }
                     else {
-                        vmCode.push_back("push " + classSymbolTable.kind(objName) + " " +
-                        std::to_string(classSymbolTable.index(objName.c_str())));
+                        vmFile.writePush(classSymbolTable.kind(objName), classSymbolTable.index(objName.c_str()));
+
                         funcName2 = classSymbolTable.type(objName) + "." + funcName2;
                         funcName = clearName(funcName2);
                         objAddition = 1;
@@ -770,7 +761,10 @@ void CompilationEngine::callSubroutine(std::string line) {
         else{
             funcName = lineVec[1].substr(0, lineVec[1].find('('));
             funcName = clearName(funcName);
-
+            funcName = m_currentClassName  + "." + funcName;
+//            pushes this 0
+            vmFile.writePush("pointer", 0);
+            objAddition = 1;
         }
     }
     else{
@@ -779,8 +773,8 @@ void CompilationEngine::callSubroutine(std::string line) {
     std::string params;
     params = removeBrackets(line, false);
     auto paramsVec = splitString(params, ',');
-
-    vmCode.push_back("call " + funcName + " " + std::to_string(paramsVec.size() + objAddition));
+    vmFile.writeCall(funcName, paramsVec.size() + objAddition);
+//    vmCode.push_back("call " + funcName + " " + std::to_string(paramsVec.size() + objAddition));
 }
 
 void CompilationEngine::compileLet(const std::string& line = "") {
@@ -819,14 +813,14 @@ void CompilationEngine::compileLet(const std::string& line = "") {
     }
 
     if (m_currentSubroutineDecType == "constructor"){
-        vmCode.push_back("pop this " + std::to_string(classSymbolTable.index(varName.c_str())));
+        vmFile.writePop("this", classSymbolTable.index(varName.c_str()));
     }
     else{
         if (subroutineSymbolTable.index(varName.c_str()) != -1){
-            vmCode.push_back("pop " + subroutineSymbolTable.kind(varName) + " " + std::to_string(subroutineSymbolTable.index(varName.c_str())));
+            vmFile.writePop(subroutineSymbolTable.kind(varName), subroutineSymbolTable.index(varName.c_str()));
         }
         else if (classSymbolTable.index(varName.c_str()) != -1){
-            vmCode.push_back("pop " + classSymbolTable.kind(varName) + " " + std::to_string(classSymbolTable.index(varName.c_str())));
+            vmFile.writePop(classSymbolTable.kind(varName), classSymbolTable.index(varName.c_str()));
         }
     }
 
@@ -848,12 +842,15 @@ void CompilationEngine::compileReturn(const std::string& line) {
 
 //  All constructors HAVE TO return this, even if they don't do anything with it.
     if (m_currentSubroutineDecType == "constructor"){
-        vmCode.push_back("push pointer 0");
-        vmCode.push_back("return");
+        vmFile.writePush("pointer", 0);
+        vmFile.writeReturn();
+//        vmCode.push_back("return");
     }
     else if ((tempTokens.size() == 1) || tempTokens[1] == ";"){
-        vmCode.push_back("push constant 0");
-        vmCode.push_back("return");
+        vmFile.writePush("constant", 0);
+//        vmCode.push_back("push constant 0");
+//        vmCode.push_back("return");
+        vmFile.writeReturn();
     }
     else{
         std::string expression;
@@ -861,7 +858,8 @@ void CompilationEngine::compileReturn(const std::string& line) {
         expression = currentLine.substr(7);
         expression = clearName(expression);
         compileExpression(expression);
-        vmCode.push_back("return");
+        vmFile.writeReturn();
+//        vmCode.push_back("return");
 
         if (tempTokens.back() == "}"){
             insideSubroutine = false;
@@ -931,38 +929,40 @@ void CompilationEngine::compileIf() {
     }
 
     compileExpression(expression);
-    vmCode.push_back("not");
+    vmFile.writeArithmetic("~");
 
     if (inlineIf){
         currentLine = currentLine.substr(currentLine.find('{')+1, currentLine.find('}') - currentLine.find('{')-1);
         currentLine = clearName(currentLine);
-        vmCode.push_back("if-goto " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
         compileStatement(currentLine);
-        vmCode.push_back("label " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
         m_continueIfLabelCount++;
         return;
     }
 
     ++m_ifLabelCount;
-    vmCode.push_back("if-goto " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
-
+    vmFile.writeIf(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+    bool use = false;
     bool trigger = false;
     while((std::find(tempTokens.begin(), tempTokens.end(), "else{") == tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") == tempTokens.end())){
        if (trigger){
-           vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+           vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
            m_ifLabelCount++;
+           m_currentLine++;
            return;
        }
-        m_currentLine++;
-        if ((std::find(tempTokens.begin(), tempTokens.end(), "else{") != tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") != tempTokens.end())){
+       if (!use){
+           m_currentLine++;
+       }
+       if ((std::find(tempTokens.begin(), tempTokens.end(), "else{") != tempTokens.end()) || (std::find(tempTokens.begin(), tempTokens.end(), "else") != tempTokens.end())){
             break;
         }
-        else if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])){
+       else if (JackTokenizer::isValid(validStatementInitials, tempTokens[0])){
             if (tempTokens[0].find("else") != std::string::npos){
                 insideIf = true;
                 break;
             }
-
 
             tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 //            return;
@@ -974,10 +974,12 @@ void CompilationEngine::compileIf() {
         }
 
         compileStatement();
+        use = true;
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
 
-    vmCode.push_back("goto " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+    vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+//    vmCode.push_back("goto " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
 
     if (insideIf){
         insideIf = false;
@@ -989,7 +991,8 @@ void CompilationEngine::compileIf() {
             m_currentLine++;
         }
 
-        vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+        vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+//        vmCode.push_back("label " + ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
         --m_ifLabelCount;
 
         currentLine = getNthToken(m_currentLine);
@@ -998,7 +1001,8 @@ void CompilationEngine::compileIf() {
             compileStatement();
         }
         m_currentLine++;
-        vmCode.push_back("label " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+//        vmCode.push_back("label " + CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
         m_continueIfLabelCount++;
     }
 }
@@ -1009,22 +1013,21 @@ void CompilationEngine::compileWhile() {
     int contCount = ++m_whileLabelCount;
     int contCount2 = ++m_continueWhileLabelCount;
 
-    vmCode.push_back("label " + WHILE_LABEL_PREFIX + std::to_string(contCount));
+    vmFile.writeLabel(WHILE_LABEL_PREFIX + std::to_string(contCount));
     compileExpression(expression);
-    vmCode.push_back("not");
-
-    vmCode.push_back("if-goto " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
+    vmFile.writeArithmetic("~");
+    vmFile.writeIf(CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
 
     m_currentLine++;
-    while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
+    while (std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()) {
         compileStatement();
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
 
-    vmCode.push_back("goto " + WHILE_LABEL_PREFIX + std::to_string(contCount));
+    vmFile.writeGoto(WHILE_LABEL_PREFIX + std::to_string(contCount));
     m_whileLabelCount++;
 
-    vmCode.push_back("label " + CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
+    vmFile.writeLabel(CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
     m_currentLine++;
 }
 

@@ -7,7 +7,7 @@
 #include <cctype>
 #include "../JackTokenizer/JackTokenizer.hpp"
 #include "../SymbolTable/SymbolTable.hpp"
-
+#include "../VMWriter/VMWriter.hpp"
 
 static CODE validVarTypes = {"int", "char", "boolean"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
@@ -59,13 +59,13 @@ private:
 private:
     std::string m_currentSubroutineDef;
     std::string m_currentSubroutineDecType;
-    int m_funcNameIndex{};
+    std::streamoff m_funcNameIndex{};
 
 public:
     void compileIf();
     void compileClass();
     void compileWhile();
-    void compileVarDec();
+    int compileVarDec();
     void compileSubroutine();
     void compileClassVarDec();
     void compileParameterList();

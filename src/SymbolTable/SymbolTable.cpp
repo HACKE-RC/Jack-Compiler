@@ -46,6 +46,9 @@ std::string SymbolTable::type(const std::string& name) {
 std::string SymbolTable::kind(const std::string &name) {
     for (int i = 0; i < m_count; i++) {
         if (m_symbolTable[i].name == name) {
+            if (m_symbolTable[i].kind == "field"){
+                return "this";
+            }
             return m_symbolTable[i].kind;
         }
     }
