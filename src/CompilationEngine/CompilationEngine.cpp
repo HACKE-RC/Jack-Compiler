@@ -216,7 +216,7 @@ bool CompilationEngine::isValidName(std::string name) {
 
 int CompilationEngine::compileVarDec() {
 /*
- * returns the number of variables declared
+ * returns the number of variables declared and updates variable declarations
  */
 
     int totalVars = 0;
@@ -238,7 +238,6 @@ int CompilationEngine::compileVarDec() {
                 std::string name = variableVector[i];
 
                 if (isValidName(clearName(name))) {
-                    totalVars++;
                     auto kind = tempTokens[0];
 
                     if (kind == "var"){
@@ -256,10 +255,11 @@ int CompilationEngine::compileVarDec() {
             compileVarDec();
         }
     else{
-//        vmFile.writeAtPos(m_funcNameIndex, m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local")));
-//        vmCode[m_funcNameIndex] = m_currentSubroutineDef + " " + std::to_string(subroutineSymbolTable.count("local"));
+        totalVars = subroutineSymbolTable.count("local");
         return totalVars;
     }
+
+    totalVars = subroutineSymbolTable.count("local");
     return totalVars;
 }
 
