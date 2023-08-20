@@ -77,13 +77,14 @@ public:
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
     CODE depthSplit(std::string expression);
+    void compileStatement(std::string line);
     void compileDo(const std::string& line);
     void compileLet(const std::string& line);
     static bool isValidName(std::string name);
     void compileExpression(std::string &expr);
     void compileReturn(const std::string& line);
     static std::string clearName(std::string name);
-    void compileStatement(std::string line);
+    CODE getParameterStrings(std::string const line);
     static CODE getExpressionVector(std::string expr);
     void compileExpressionList(std::string expressions);
     static long long countParameters(CODE parameterList);

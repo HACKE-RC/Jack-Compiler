@@ -10,7 +10,7 @@ VMWriter::VMWriter(std::string fName) {
     }
 }
 
-void VMWriter::writePush(std::string segment, int index) {
+void VMWriter::writePush(const std::string& segment, int index) {
     std::string code = "push " + segment + " " + std::to_string(index) + "\n";
     m_fStream.write(code.c_str(), code.length());
     increaseLineNo();

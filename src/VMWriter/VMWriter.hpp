@@ -12,7 +12,7 @@ public:
     explicit VMWriter();
 
 public:
-    void writePush(std::string segment, int index);
+    void writePush(const std::string& segment, int index);
     void writePop(std::string segment, int index);
 
 public:

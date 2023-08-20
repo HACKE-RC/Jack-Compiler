@@ -13,8 +13,8 @@ int main(int argc, char* argv[]){
 //    tokenizer.cleanCode();
 //    tokenizer.tokenizeAllCode();
     CompilationEngine compiler(argv[1]);
-    compiler.depthSplit("(((y + size) < 254) & ((x + size) < 510))");
-
+//    compiler.depthSplit("(((y + size) < 254) & ((x + size) < 510))");
+    auto s = compiler.getParameterStrings(R"(do Output.printString("Score: 0", 6, "alpha", 5);)");
 
     return 0;
 }

@@ -356,6 +356,9 @@ void CompilationEngine::compileStatement(std::string line = "") {
         else if (tempTokens[0] == "while"){
             compileWhile();
         }
+        else if (tempTokens[0].find("else") != std::string::npos){
+            m_currentLine++;
+        }
     }
     else if (JackTokenizer::isValid(validSubroutineDec, tempTokens[0])){
         compileSubroutine();
@@ -401,7 +404,6 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
         end = str.find_first_of(')');
     }
 
-
     std::string str2(str.begin() + start, str.begin() + end);
     return str2;
 }
@@ -435,7 +437,6 @@ void CompilationEngine::compileExpression(std::string& expr) {
             compileExpression(expr);
         }
         vmFile.writeArithmetic("~");
-//        vmCode.push_back("not");
     }
     else if (exprVec[0].starts_with("(")){
         expr = expr.substr(1);
@@ -567,15 +568,11 @@ void CompilationEngine::compileTerm(std::string term) {
     }
     else if (term[0] == '-'){
         vmFile.writePush("constant", stoi(term.substr(1)));
-//        vmCode.push_back("push constant " + term.substr(1));
-//        vmCode.push_back("neg");
         vmFile.writeNeg();
     }
     else if (reservedValues.find(term) != reservedValues.end()){
         if (reservedValues[term] == "-1"){
             vmFile.writePush("constant", 1);
-//            vmCode.push_back("push constant 1");
-//            vmCode.push_back("neg");
             vmFile.writeNeg();
         }
         else{
@@ -949,7 +946,7 @@ void CompilationEngine::compileIf() {
        if (trigger){
            vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
            m_ifLabelCount++;
-           m_currentLine++;
+           m_currentLine+=2;
            return;
        }
        if (!use){
@@ -1085,4 +1082,47 @@ CODE CompilationEngine::depthSplit(std::string expression){
    }
 
     return exprVec;
+}
+
+CODE CompilationEngine::getParameterStrings(const std::string line) {
+    std::string token;
+    std::string temp;
+    CODE params;
+
+    temp = removeBrackets(line.c_str(), false);
+    temp = temp.substr(0, temp.find_last_of('\"'));
+    int i = 0;
+
+    i++;
+
+    while (i < temp.length()){
+        while((i < temp.length())){
+            if (temp.at(i) == '"' ){
+                if (!std::isalpha(temp.at(i+1))){
+                    break;
+                }
+                i++;
+            }
+            std::cout << temp.at(i) << ": " << i << std::endl;
+            token.push_back(temp.at(i));
+            i++;
+        }
+        params.push_back(token);
+        if (i + 1 < temp.length()){
+            temp = temp.substr(i+1);
+        }
+        else{
+            return params;
+        }
+
+        auto id =  temp.find_first_of('"');
+        if (id == std::string::npos){
+            return params;
+        }
+        temp = temp.substr(id);
+        token.clear();
+        i = 0;
+    }
+
+    return params;
 }
