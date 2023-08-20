@@ -13,96 +13,96 @@ VMWriter::VMWriter(std::string fName) {
 void VMWriter::writePush(const std::string& segment, int index) {
     std::string code = "push " + segment + " " + std::to_string(index) + "\n";
     m_fStream.write(code.c_str(), code.length());
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writePop(std::string segment, int index) {
     std::string code = "pop " + segment + " " + std::to_string(index) + "\n";
     m_fStream.write(code.c_str(), code.length());
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeArithmetic(std::string command) {
     if (command == "+") {
         m_fStream << "add\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "-") {
         m_fStream << "sub\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "*") {
         std::string code = "call Math.multiply 2\n";
         m_fStream.write(code.c_str(), code.length());
-        increaseLineNo();
+        consume();
     }
     else if (command == "/") {
         std::string code = "call Math.divide 2\n";
         m_fStream.write(code.c_str(), code.length());
-        increaseLineNo();
+        consume();
     }
     else if (command == "&") {
         m_fStream << "and\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "|") {
         m_fStream << "or\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "<") {
         m_fStream << "lt\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == ">") {
         m_fStream << "gt\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "=") {
         m_fStream << "eq\n";
-        increaseLineNo();
+        consume();
     }
     else if (command == "~") {
         m_fStream << "not\n";
-        increaseLineNo();
+        consume();
     }
 }
 
 void VMWriter::writeNeg() {
     m_fStream << "neg\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeLabel(std::string name) {
     m_fStream << "label " + name + "\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeGoto(std::string name) {
     m_fStream << "goto " + name + "\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeIf(std::string label) {
     m_fStream << "if-goto " + label + "\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeCall(std::string functionName, int nArgs) {
     m_fStream << "call " + functionName + " " + std::to_string(nArgs) + "\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeFunction(std::string functionName, int nVars) {
     m_fStream << "function " + functionName + " " + std::to_string(nVars) + "\n";
-    increaseLineNo();
+    consume();
 }
 
 void VMWriter::writeReturn() {
     m_fStream << "return\n";
-    increaseLineNo();
+    consume();
 }
 
-void VMWriter::increaseLineNo() {
+void VMWriter::consume() {
     m_lineNo++;
 }
 

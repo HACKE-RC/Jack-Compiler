@@ -166,6 +166,12 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
                 break;
             }
 
+            vec.push_back(str.substr(0, idx));
+            vec.push_back("(");
+            vec.push_back(")");
+            str = str.substr(idx + 2);
+            item = str;
+//            str = str.substr(idx);
             idx = str.find(32);
         }
 
@@ -199,16 +205,16 @@ CODE JackTokenizer::tokenizeCode(std::string str) {
                 }
             }
 
-            if (idx >= str.length()) {
-                if (str == "{"){
-                    addCurlyBrackets(str, vec);
-                    break;
-                }
-                if (!item.empty()){
-                    addSemicolon(str, vec);
-                }
+//            if (idx >= str.length()) {
+            if (str == "{"){
+                addCurlyBrackets(str, vec);
                 break;
             }
+            if (!item.empty()){
+                addSemicolon(str, vec);
+            }
+//            break;
+//            }
         }
         else{
             str = str.substr(idx + 1);
@@ -310,13 +316,37 @@ std::string JackTokenizer::addBrackets(std::string item, CODE &vec) {
 int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
     std::string temp2;
 
+    temp2 = item;
     if (item.ends_with(';') && !(item == ";")) {
         temp2 = item;
         item = item.substr(0, item.find(';'));
     }
 
     if ((item != "}") && (item.find('+') == std::string::npos) && (item.find('-') == std::string::npos) && (item.find('/') == std::string::npos) && (item.find('*') == std::string::npos)){
-        vec.push_back(item);
+        int i = 0;
+        std::string temp;
+//        std::string temp2;
+        while ((i < item.length()) && isalnum(item.at(i))){
+            temp.push_back(item.at(i));
+            i++;
+        }
+        vec.push_back(temp);
+        if (!item.substr(i).empty() ){
+            if (item.substr(i).length() == 1){
+                vec.push_back(item.substr(i));
+                item = "";
+                return 0;
+            }
+            else {
+                item = item.substr(i);
+                return 0;
+            }
+        }
+        else{
+            item = item.substr(i);
+            item = temp2.substr(i);
+//            return 0;
+        }
     }
 
     if (isValid(validOperations, item)){

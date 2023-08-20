@@ -28,7 +28,7 @@ public:
     void writeCall(std::string functionName, int nArgs);
     void writeFunction(std::string functionName, int nVars);
     void writeReturn();
-    void increaseLineNo();
+    void consume();
     std::streamoff getLineNo();
     void writeAtPos(long long pos, std::string s);
 };

@@ -86,7 +86,7 @@ public:
     static std::string clearName(std::string name);
     CODE getParameterStrings(std::string const line);
     static CODE getExpressionVector(std::string expr);
-    void compileExpressionList(std::string expressions);
+    void compileExpressionList(const std::string& expressions);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     bool isCharacterPresent(const std::string& str1, char c);

@@ -61,9 +61,19 @@ CompilationEngine::CompilationEngine(std::string fName) {
 }
 
 void CompilationEngine::compileClass() {
+    std::string name;
+    int i = 0;
+    while ((i < tempTokens[1].length()) && std::isalnum(tempTokens[1].at(i))){
+        if (std::isspace(tempTokens[1].at(i))){
+            i++;
+            continue;
+        }
+        name.push_back(tempTokens[1].at(i));
+        i++;
+    }
 
-    if (isValidName(tempTokens[1])){
-        m_currentClassName = tempTokens[1];
+    if (isValidName(name)){
+        m_currentClassName = name;
         validSubroutineTypes.push_back(m_currentClassName);
     }
     else{
@@ -137,7 +147,7 @@ void CompilationEngine::compileSubroutine() {
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
-    int totalVars;
+    int totalVars = 0;
 
     if (tempTokens.empty()){
         return;
@@ -415,6 +425,26 @@ void CompilationEngine::compileExpression(std::string& expr) {
     expr = clearName(expr);
     expr = prioritizeBrackets(expr);
 
+    try {
+        if (expr.starts_with('"') && expr.ends_with('"')) {
+            auto temp = expr.substr(1, expr.length() - 2);
+
+            vmFile.writePush("constant", temp.length());
+            vmFile.writeCall("String.new", 1);
+
+            for (auto x: temp) {
+                vmFile.writePush("constant", int(x));
+                vmFile.writeCall("String.appendChar", 2);
+            }
+            return;
+        }
+    }
+    catch (std::exception &e){
+        std::cerr << e.what() << '\n';
+        std::exit(EXIT_FAILURE);
+    }
+
+
     exprVec = depthSplit(expr);
     if (exprVec.size() == 1){
         exprVec = getExpressionVector(expr);
@@ -480,7 +510,7 @@ bool CompilationEngine::isCharacterPresent(const std::string &str1, char c) {
     return false;
 }
 
-void CompilationEngine::compileExpressionList(std::string expressions) {
+void CompilationEngine::compileExpressionList(const std::string& expressions) {
     std::string exprList = removeBrackets(expressions, false);
 
     if (exprList.empty()) {
