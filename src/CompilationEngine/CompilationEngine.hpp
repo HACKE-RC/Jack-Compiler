@@ -73,7 +73,6 @@ public:
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
-    void callSubroutine(std::string line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
     CODE depthSplit(std::string expression);
@@ -86,11 +85,12 @@ public:
     static std::string clearName(std::string name);
     CODE getParameterStrings(std::string const line);
     static CODE getExpressionVector(std::string expr);
-    void compileExpressionList(const std::string& expressions);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     bool isCharacterPresent(const std::string& str1, char c);
+    void compileExpressionList(const std::string& expressions);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     static std::string removeBrackets(const std::string& str, bool inLine);
+    void callSubroutine(std::string line, std::string funcName, int objAddition);
 };

@@ -97,5 +97,6 @@ void SymbolTable::display() {
     for (int i = 0; i < m_count; i++) {
         std::cout << m_symbolTable[i].name << ": " << m_symbolTable[i].type << ": " << m_symbolTable[i].kind << std::endl;
     }
+    std::cout << "----------------" << std::endl;
 
 }
