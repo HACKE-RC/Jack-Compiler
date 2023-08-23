@@ -865,6 +865,26 @@ void CompilationEngine::compileLet(const std::string& line = "") {
     m_currentLine++;
 }
 
+std::string& ltrim(std::string& str) {
+    auto it = std::find_if(str.begin(), str.end(), [](char ch) {
+        return !std::isspace(ch);
+    });
+    str.erase(str.begin(), it);
+    return str;
+}
+
+std::string& rtrim(std::string& str) {
+    auto it = std::find_if(str.rbegin(), str.rend(), [](char ch) {
+        return !std::isspace(ch);
+    });
+    str.erase(it.base(), str.end());
+    return str;
+}
+
+std::string& trim(std::string& str) {
+    return ltrim(rtrim(str));
+}
+
 void CompilationEngine::compileReturn(const std::string& line) {
     std::string currentLine ;
 
@@ -889,8 +909,14 @@ void CompilationEngine::compileReturn(const std::string& line) {
     }
     else{
         std::string expression;
+        expression = getNthToken(m_currentLine-1);
+        expression = expression.substr(expression.find_first_of("return") + 6);
+        trim(expression);
 
-        expression = tempTokens[1];
+        if (expression.back() == '}'){
+            expression.pop_back();
+        }
+
         expression = clearName(expression);
         compileExpression(expression);
         vmFile.writeReturn();
@@ -899,27 +925,6 @@ void CompilationEngine::compileReturn(const std::string& line) {
             insideSubroutine = false;
         }
     }
-}
-
-
-std::string& ltrim(std::string& str) {
-    auto it = std::find_if(str.begin(), str.end(), [](char ch) {
-        return !std::isspace(ch);
-    });
-    str.erase(str.begin(), it);
-    return str;
-}
-
-std::string& rtrim(std::string& str) {
-    auto it = std::find_if(str.rbegin(), str.rend(), [](char ch) {
-        return !std::isspace(ch);
-    });
-    str.erase(it.base(), str.end());
-    return str;
-}
-
-std::string& trim(std::string& str) {
-    return ltrim(rtrim(str));
 }
 
 std::vector<std::string> CompilationEngine::splitString(std::string& str, char delim) {
@@ -948,6 +953,7 @@ std::vector<std::string> CompilationEngine::splitString(std::string& str, char d
 void CompilationEngine::compileIf() {
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
+    int elseBlockLabelCountc = elseBlockLabelCount;
 
     std::string expression;
     bool insideIf = false;
@@ -966,23 +972,43 @@ void CompilationEngine::compileIf() {
     compileExpression(expression);
     vmFile.writeArithmetic("~");
 
+    bool hasElse = false;
+
     if (inlineIf){
         currentLine = currentLine.substr(currentLine.find('{')+1, currentLine.find('}') - currentLine.find('{')-1);
         currentLine = clearName(currentLine);
-        ++m_continueIfLabelCount;
-        vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+
+        if (m_code[m_currentLine+1].find("else") != std::string::npos){
+            ++elseBlockLabelCountc;
+            vmFile.writeIf(ELSE_LABEL_PREFIX + std::to_string(elseBlockLabelCountc));
+            hasElse = true;
+        }
+        else{
+            ++m_continueIfLabelCount;
+            vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        }
+
+        elseBlockLabelCount = elseBlockLabelCountc;
         compileStatement(currentLine);
-        vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
-        if (getNthToken(m_currentLine).find("else") != std::string::npos){
+
+        if (hasElse){
             insideIf = true;
-            m_ifLabelCount++;
+            ++m_continueIfLabelCount;
+            vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+            elseBlockLabelCount = elseBlockLabelCountc;
             goto compileElse;
         }
+        else{
+            vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        }
+
+        elseBlockLabelCount = elseBlockLabelCountc;
         return;
     }
 
-    ++m_ifLabelCount;
-    vmFile.writeIf(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
+    ++elseBlockLabelCountc;
+    vmFile.writeIf(ELSE_LABEL_PREFIX + std::to_string(elseBlockLabelCountc));
+    elseBlockLabelCount = elseBlockLabelCountc;
 
     use = false;
     trigger = false;
@@ -995,9 +1021,6 @@ void CompilationEngine::compileIf() {
        if (!use){
            m_currentLine++;
        }
-//       else if (!inlineIf){
-//           m_currentLine++;
-//       }
 
        if (tempTokens.empty()){
            m_currentLine += 1;
@@ -1034,40 +1057,65 @@ void CompilationEngine::compileIf() {
             }
         }
 
+        elseBlockLabelCount = elseBlockLabelCountc;
         compileStatement();
         use = true;
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
+
 //  these help the execution move to the correct spot in the code after it has executed the if statement
     ++m_continueIfLabelCount;
     vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
 
     compileElse:
     if (insideIf){
+        bool inlineElse = false;
         insideIf = false;
 
-        if (getNthToken(m_currentLine) == "}"){
+        currentLine = getNthToken(m_currentLine);
+        trim(currentLine);
+
+        if (currentLine == "}"){
             m_currentLine++;
         }
-        if (getNthToken(m_currentLine).find("else") != std::string::npos){
-            m_currentLine++;
+        else if (currentLine.back() == '}'){
+            inlineElse = true;
         }
 
-        vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(m_ifLabelCount));
-        --m_ifLabelCount;
+        if (getNthToken(m_currentLine).find("else") != std::string::npos){
+            if (!inlineElse){
+                m_currentLine++;
+            }
+        }
+
+        vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(elseBlockLabelCountc));
+        elseBlockLabelCountc++;
+        elseBlockLabelCount = elseBlockLabelCountc;
 
         currentLine = getNthToken(m_currentLine);
         tempTokens = splitString(currentLine, ' ');
+
+        if (inlineElse){
+            currentLine = currentLine.substr(currentLine.find('{')+1, currentLine.find('}') - currentLine.find('{')-1);
+            currentLine = clearName(currentLine);
+            elseBlockLabelCount = elseBlockLabelCountc;
+            compileStatement(currentLine);
+            goto continueElse;
+        }
+
         while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
+            elseBlockLabelCount = elseBlockLabelCountc;
             compileStatement();
         }
 
         if (JackTokenizer::isValid(validStatementInitials, tempTokens[0]) && tempTokens.back() == "}"){
+            elseBlockLabelCount = elseBlockLabelCountc;
             compileStatement();
         }
 
+        elseBlockLabelCount  = elseBlockLabelCountc;
         m_currentLine++;
-//        ++m_continueIfLabelCount;
+        continueElse:
         vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
     }
 }
