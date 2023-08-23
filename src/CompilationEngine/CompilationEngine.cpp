@@ -441,9 +441,9 @@ void CompilationEngine::compileDo(const std::string& line = "") {
         funcName = lineVec[0].substr(0, lineVec[0].find('('));
     }
 
-
+    expressions = removeBrackets(expressions, false);
     compileExpressionList(expressions);
-    callSubroutine(expressions,  funcName, objAddition);
+    callSubroutine(line,  funcName, objAddition);
     vmFile.writePop("temp", 0);
 }
 
@@ -481,6 +481,10 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
 void CompilationEngine::compileExpression(std::string& expr) {
     CODE exprVec;
 
+    if (expr.empty()){
+        return;
+    }
+
     expr = clearName(expr);
     expr = prioritizeBrackets(expr);
 
@@ -512,6 +516,9 @@ void CompilationEngine::compileExpression(std::string& expr) {
     }), exprVec.end());
     }
 
+    if (exprVec.empty()){
+        return;
+    }
 
     if (exprVec[0] == "-"){
         compileTerm(expr);
@@ -538,13 +545,31 @@ void CompilationEngine::compileExpression(std::string& expr) {
 
     if (exprVec.size() > 1){
         int n = 1;
+        int i = 1;
         while(JackTokenizer::isValid(validOperations, exprVec[n])){
             if (n+1 > exprVec.size()){
                 return;
             }
-            compileExpression(exprVec[n+1]);
+
+            while(exprVec[n+i] == "("){
+                i++;
+            }
+            while(exprVec[n+i] == ")"){
+                i++;
+            }
+
+            if (exprVec[n+i] == "-"){
+                compileTerm(exprVec[n+i+1]);
+                vmFile.writeNeg();
+                i++;
+            }
+            else{
+                compileExpression(exprVec[n+i]);
+            }
+
             vmFile.writeArithmetic(exprVec[n]);
-         n += 2;
+         n += 2 + (i-1);
+         i = 1;
       }
    }
 }
@@ -570,7 +595,7 @@ bool CompilationEngine::isCharacterPresent(const std::string &str1, char c) {
 }
 
 void CompilationEngine::compileExpressionList(const std::string& expressions) {
-    std::string exprList = removeBrackets(expressions, false);
+    std::string exprList = expressions;
 
     if (exprList.empty()) {
         return;
@@ -638,9 +663,15 @@ void CompilationEngine::compileTerm(std::string term) {
     if (term.starts_with('(')){
         term.erase(0, 1);
     }
-    else if (term.ends_with(')')){
+    while (term.ends_with(')')){
         term.pop_back();
     }
+    int i = 1;
+
+    while(term.starts_with('(')){
+        term.erase(0, i++);
+    }
+
     if (isNumber(term)){
         vmFile.writePush("constant", std::stoi(term));
     }
@@ -838,7 +869,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
 
     if (std::regex_search(value, callPattern)){
         if (value.ends_with(");")){
-            compileExpressionList(getNthToken(m_currentLine));
+            compileExpressionList(removeBrackets(value, false));
             std::string funcName = value.substr(0, value.find('('));
             callSubroutine(line, funcName, 0);
         }
@@ -953,7 +984,8 @@ std::vector<std::string> CompilationEngine::splitString(std::string& str, char d
 void CompilationEngine::compileIf() {
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
-    int elseBlockLabelCountc = elseBlockLabelCount;
+    int elseBlockLabelCountc = m_elseBlockLabelCount;
+    int continueIfLabelCountLocal = m_continueIfLabelCount;
 
     std::string expression;
     bool insideIf = false;
@@ -984,31 +1016,38 @@ void CompilationEngine::compileIf() {
             hasElse = true;
         }
         else{
-            ++m_continueIfLabelCount;
-            vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+//            ++m_continueIfLabelCount;
+            ++continueIfLabelCountLocal;
+            vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(continueIfLabelCountLocal));
+//            vmFile.writeIf(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
         }
 
-        elseBlockLabelCount = elseBlockLabelCountc;
+        m_elseBlockLabelCount = elseBlockLabelCountc;
+        m_continueIfLabelCount = continueIfLabelCountLocal;
         compileStatement(currentLine);
 
         if (hasElse){
             insideIf = true;
-            ++m_continueIfLabelCount;
-            vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
-            elseBlockLabelCount = elseBlockLabelCountc;
+//            ++m_continueIfLabelCount;
+            ++continueIfLabelCountLocal;
+            vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(continueIfLabelCountLocal));
+            m_elseBlockLabelCount = elseBlockLabelCountc;
+            m_continueIfLabelCount = continueIfLabelCountLocal;
             goto compileElse;
         }
         else{
-            vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+            vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(continueIfLabelCountLocal));
         }
 
-        elseBlockLabelCount = elseBlockLabelCountc;
+        m_elseBlockLabelCount = elseBlockLabelCountc;
+        m_continueIfLabelCount = continueIfLabelCountLocal;
         return;
     }
 
     ++elseBlockLabelCountc;
     vmFile.writeIf(ELSE_LABEL_PREFIX + std::to_string(elseBlockLabelCountc));
-    elseBlockLabelCount = elseBlockLabelCountc;
+    m_elseBlockLabelCount = elseBlockLabelCountc;
+    m_continueIfLabelCount = continueIfLabelCountLocal;
 
     use = false;
     trigger = false;
@@ -1035,37 +1074,35 @@ void CompilationEngine::compileIf() {
               insideIf = true;
               break;
           }
-
           tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
       }
 
-
-        if (std::find(tempTokens.begin(), tempTokens.end(), "}") != tempTokens.end()){
-            tempTokens  = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-            if (getNthToken(m_currentLine).find("else") != std::string::npos){
-                trigger = true;
-                continue;
-            }
-            else if (getNthToken(m_currentLine + 1).find("else") != std::string::npos){
-                m_currentLine += 1;
-                tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
-                continue;
-            }
-            else{
-                ++m_currentLine;
-                return;
-            }
+    if (std::find(tempTokens.begin(), tempTokens.end(), "}") != tempTokens.end()){
+        tempTokens  = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+        if (getNthToken(m_currentLine).find("else") != std::string::npos){
+            trigger = true;
+            continue;
         }
+        else if (getNthToken(m_currentLine + 1).find("else") != std::string::npos){
+            m_currentLine += 1;
+            tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
+            continue;
+        }
+        else{
+            ++m_currentLine;
+            return;
+        }
+    }
 
-        elseBlockLabelCount = elseBlockLabelCountc;
+        m_elseBlockLabelCount = elseBlockLabelCountc;
         compileStatement();
         use = true;
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
 
 //  these help the execution move to the correct spot in the code after it has executed the if statement
-    ++m_continueIfLabelCount;
-    vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+    ++continueIfLabelCountLocal;
+    vmFile.writeGoto(CONTINUE_IF_LABEL_PREFIX + std::to_string(continueIfLabelCountLocal));
 
     compileElse:
     if (insideIf){
@@ -1090,7 +1127,8 @@ void CompilationEngine::compileIf() {
 
         vmFile.writeLabel(ELSE_LABEL_PREFIX + std::to_string(elseBlockLabelCountc));
         elseBlockLabelCountc++;
-        elseBlockLabelCount = elseBlockLabelCountc;
+        m_elseBlockLabelCount = elseBlockLabelCountc;
+        m_continueIfLabelCount = continueIfLabelCountLocal;
 
         currentLine = getNthToken(m_currentLine);
         tempTokens = splitString(currentLine, ' ');
@@ -1098,25 +1136,28 @@ void CompilationEngine::compileIf() {
         if (inlineElse){
             currentLine = currentLine.substr(currentLine.find('{')+1, currentLine.find('}') - currentLine.find('{')-1);
             currentLine = clearName(currentLine);
-            elseBlockLabelCount = elseBlockLabelCountc;
+            m_elseBlockLabelCount = elseBlockLabelCountc;
+            m_continueIfLabelCount = continueIfLabelCountLocal;
             compileStatement(currentLine);
             goto continueElse;
         }
 
         while(std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()){
-            elseBlockLabelCount = elseBlockLabelCountc;
+            m_elseBlockLabelCount = elseBlockLabelCountc;
             compileStatement();
         }
 
         if (JackTokenizer::isValid(validStatementInitials, tempTokens[0]) && tempTokens.back() == "}"){
-            elseBlockLabelCount = elseBlockLabelCountc;
+            m_elseBlockLabelCount = elseBlockLabelCountc;
             compileStatement();
         }
 
-        elseBlockLabelCount  = elseBlockLabelCountc;
+        m_elseBlockLabelCount  = elseBlockLabelCountc;
+        m_continueIfLabelCount = continueIfLabelCountLocal;
+
         m_currentLine++;
         continueElse:
-        vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(m_continueIfLabelCount));
+        vmFile.writeLabel(CONTINUE_IF_LABEL_PREFIX + std::to_string(continueIfLabelCountLocal));
     }
 }
 
@@ -1158,6 +1199,10 @@ CODE CompilationEngine::depthSplit(std::string expression){
     int depth = 0;
     int index = 0;
     bool foundFirstCloseBracket = false;
+
+    if (expression.empty()){
+        return {};
+    }
 
     CODE exprVec;
     std::string choppedStr;
