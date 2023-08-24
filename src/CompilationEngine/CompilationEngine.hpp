@@ -59,7 +59,8 @@ private:
 private:
     std::string m_currentSubroutineDef;
     std::string m_currentSubroutineDecType;
-    std::streamoff m_funcNameIndex{};
+    std::unordered_map<std::string, int> labelCounts;
+    std::string generateLabel(const std::string& labelType);
 
 public:
     void compileIf();
@@ -83,7 +84,7 @@ public:
     void compileExpression(std::string &expr);
     void compileReturn(const std::string& line);
     static std::string clearName(std::string name);
-    CODE getParameterStrings(std::string const line);
+    static CODE getParameterStrings(std::string const& line);
     static CODE getExpressionVector(std::string expr);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
@@ -92,5 +93,7 @@ public:
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     static std::string removeBrackets(const std::string& str, bool inLine);
-    void callSubroutine(std::string line, std::string funcName, int objAddition);
+    void callSubroutine(const std::string& line, std::string funcName, int objAddition);
+
+    std::unordered_map<std::string, int> getFunctionName(CODE &lineVec);
 };
