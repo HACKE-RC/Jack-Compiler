@@ -296,8 +296,12 @@ void CompilationEngine::compileParameterList() {
                     auto tempTokens2 = tempTokens;
                         std::vector<std::string> parameters = removeBrackets(tempTokens2);
                         paramCount = countParameters(parameters);
+                        long long i = 0;
 
-                        for (long long i = 0; i < (paramCount * 3); i+=3) {
+                        if (m_currentSubroutineDecType == "method"){
+                            subroutineSymbolTable.insert("this", m_currentClassName, "argument");
+                        }
+                        for (i; i < (paramCount * 3); i+=3) {
                             subroutineSymbolTable.insert(parameters[i+1], parameters[i], "argument");
                         }
                 }
@@ -881,11 +885,9 @@ void CompilationEngine::compileLet(const std::string& line = "") {
 
     if (std::regex_search(value, callPattern)){
         if (value.ends_with(");")){
-//            std::vector<int> newVector(originalVector.begin() + startIndex, originalVector.end());
             std::vector<std::string> lineVec(tempTokens.begin() + 2, tempTokens.end());
             compileExpressionList(removeBrackets(value, false));
             auto funcData = getFunctionName(lineVec);
-//            std::string funcName = value.substr(0, value.find('('));
             std::string funcName = funcData.begin()->first;
             int objAddition = funcData.begin()->second;
 

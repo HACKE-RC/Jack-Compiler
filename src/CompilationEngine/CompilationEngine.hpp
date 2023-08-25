@@ -51,8 +51,6 @@ private:
 
 private:
     int m_currentLine;
-    int m_elseBlockLabelCount = 0;
-    int m_continueIfLabelCount = 0;
     int m_continueWhileLabelCount = 0;
     int m_whileLabelCount = 0;
 
