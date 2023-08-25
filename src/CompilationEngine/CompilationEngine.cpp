@@ -505,24 +505,19 @@ void CompilationEngine::compileExpression(std::string& expr) {
     expr = clearName(expr);
     expr = prioritizeBrackets(expr);
 
-    try {
-        if (expr.starts_with('"') && expr.ends_with('"')) {
-            auto temp = expr.substr(1, expr.length() - 2);
+    if (expr.starts_with('"') && expr.ends_with('"')) {
+        auto temp = expr.substr(1, expr.length() - 2);
 
-            vmFile.writePush("constant", temp.length());
-            vmFile.writeCall("String.new", 1);
+        vmFile.writePush("constant", temp.length());
+        vmFile.writeCall("String.new", 1);
 
-            for (auto x: temp) {
-                vmFile.writePush("constant", int(x));
-                vmFile.writeCall("String.appendChar", 2);
-            }
-            return;
+        for (auto x: temp) {
+            vmFile.writePush("constant", int(x));
+            vmFile.writeCall("String.appendChar", 2);
         }
+        return;
     }
-    catch (std::exception &e){
-        std::cerr << e.what() << '\n';
-        std::exit(EXIT_FAILURE);
-    }
+
 
 
     exprVec = depthSplit(expr);
@@ -1021,20 +1016,18 @@ void CompilationEngine::compileIf() {
 
     std::string currentLine = getNthToken(m_currentLine);
     tempTokens = splitString(currentLine, ' ');
-    int elseBlockLabelCountc = m_elseBlockLabelCount;
-    int continueIfLabelCountLocal = m_continueIfLabelCount;
 
     std::string expression;
     bool insideIf = false;
     bool inlineIf = false;
-    bool use, trigger;
+    bool use, trigger = false;
 
     if (currentLine.back() == '{'){
         insideIf = true;
         expression = removeBrackets(currentLine, false);
     }
     else if (clearName(currentLine).back() == '}'){
-        expression = removeBrackets(currentLine, true);
+        expression = removeBrackets(currentLine, false);
         inlineIf = true;
     }
 
@@ -1053,7 +1046,6 @@ void CompilationEngine::compileIf() {
         }
         else{
             vmFile.writeIf(continueIfLabel);
-            ++continueIfLabelCountLocal;
         }
 
         compileStatement(currentLine);
