@@ -4,7 +4,7 @@
 
 VMWriter vmFile;
 
-CompilationEngine::CompilationEngine(std::string fName) {
+[[maybe_unused]] CompilationEngine::CompilationEngine(std::string fName) {
     std::string fName2 = fName;
 
     CODE code;
@@ -463,7 +463,8 @@ void CompilationEngine::compileDo(const std::string& line = "") {
         funcName = lineVec[0].substr(0, lineVec[0].find('('));
     }
 
-    expressions = removeBrackets(expressions, false);
+//    std::unordered_map<std::string, std::string> brackets = {{"(", ")"}};
+    expressions = removeBrackets(expressions, false, roundBrackets);
     compileExpressionList(expressions);
     callSubroutine(line, funcName, objAddition);
     vmFile.writePop("temp", 0);
@@ -477,8 +478,8 @@ CODE CompilationEngine::removeBrackets(CODE code) {
     return removed;
 }
 
-std::string CompilationEngine::removeBrackets(const std::string& str, bool inLine) {
-    auto start = str.find_first_of('(');
+std::string CompilationEngine::removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets) {
+    auto start = str.find_first_of(brackets.begin()->first);
     unsigned long long end;
 
     if (start == std::string::npos) {
@@ -488,10 +489,10 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
     start = start+1;
 
     if (!(inLine)){
-        end = str.find_last_of(')');
+        end = str.find_last_of(brackets.begin()->second);
     }
     else{
-        end = str.find_first_of(')');
+        end = str.find_first_of(brackets.begin()->second);
     }
 
     std::string str2(str.begin() + start, str.begin() + end);
@@ -522,7 +523,10 @@ void CompilationEngine::compileExpression(std::string& expr) {
         return;
     }
 
-
+    if (std::count(expr.begin(), expr.end(), ']') >= 1 && std::count(expr.begin(), expr.end(), '[') >= 1){
+        compileArray(expr);
+        return;
+    }
 
     exprVec = depthSplit(expr);
     if (exprVec.size() == 1){
@@ -541,7 +545,7 @@ void CompilationEngine::compileExpression(std::string& expr) {
     }
     else if (exprVec[0] == "~"){
         if (exprVec[1] == "("){
-            expr = removeBrackets(expr, false);
+            expr = removeBrackets(expr, false, roundBrackets);
             compileExpression(expr);
         }
         else{
@@ -857,7 +861,7 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
 
 void CompilationEngine::callSubroutine(const std::string& line, std::string funcName, int objAddition) {
     std::string params;
-    params = removeBrackets(line, false);
+    params = removeBrackets(line, false, roundBrackets);
     auto paramsVec = splitString(params, ',');
     vmFile.writeCall(std::move(funcName), paramsVec.size() + objAddition);
 }
@@ -877,6 +881,12 @@ void CompilationEngine::compileLet(const std::string& line = "") {
 
     std::string varName = tempTokens[1];
 
+    if (std::count(varName.begin(), varName.end(), '[') >= 1 && std::count(varName.begin(), varName.end(), ']') >= 1){
+        m_isArrayDec = true;
+        compileExpression(varName);
+    }
+
+
     std::string value;
     value = currentLine.substr(currentLine.find(tempTokens[3]));
     value.erase(0, value.find_first_not_of(' '));
@@ -886,7 +896,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
     if (std::regex_search(value, callPattern)){
         if (value.ends_with(");")){
             std::vector<std::string> lineVec(tempTokens.begin() + 2, tempTokens.end());
-            compileExpressionList(removeBrackets(value, false));
+            compileExpressionList(removeBrackets(value, false, roundBrackets));
             auto funcData = getFunctionName(lineVec);
             std::string funcName = funcData.begin()->first;
             int objAddition = funcData.begin()->second;
@@ -894,11 +904,21 @@ void CompilationEngine::compileLet(const std::string& line = "") {
             callSubroutine(line, funcName, objAddition);
         }
     }
+//    else if(std::count(value.begin(), value.end(),'[') >= 1 && std::count(value.begin(), value.end(), ']') >= 1){
+//        compileExpression(value);
+//    }
     else{
         CODE expressions = splitString(currentLine, '=');
         std::string expression = expressions[1];
         expression = clearName(expression);
         compileExpressionList(expression);
+        if (m_isArrayDec){
+            vmFile.writePop("temp", 1);
+            vmFile.writePop("pointer", 1);
+            vmFile.writePush("temp", 1);
+            vmFile.writePop("that", 0);
+            m_isArrayDec = false;
+        }
     }
 
     if (m_currentSubroutineDecType == "constructor"){
@@ -1026,10 +1046,10 @@ void CompilationEngine::compileIf() {
 
     if (currentLine.back() == '{'){
         insideIf = true;
-        expression = removeBrackets(currentLine, false);
+        expression = removeBrackets(currentLine, false, roundBrackets);
     }
     else if (clearName(currentLine).back() == '}'){
-        expression = removeBrackets(currentLine, false);
+        expression = removeBrackets(currentLine, false, roundBrackets);
         inlineIf = true;
     }
 
@@ -1171,7 +1191,7 @@ void CompilationEngine::compileIf() {
 
 void CompilationEngine::compileWhile() {
     std::string currentLine = getNthToken(m_currentLine);
-    std::string expression = removeBrackets(currentLine, false);
+    std::string expression = removeBrackets(currentLine, false, roundBrackets);
     int contCount = ++m_whileLabelCount;
     int contCount2 = ++m_continueWhileLabelCount;
 
@@ -1253,45 +1273,35 @@ CODE CompilationEngine::depthSplit(std::string expression){
     return exprVec;
 }
 
-CODE CompilationEngine::getParameterStrings(const std::string& line) {
-    std::string token;
-    std::string temp;
-    CODE params;
+void CompilationEngine::compileArray(const std::string& line) {
+//    a[5]
+//    push <a>
+//    push constant 5
+//    add
+//  copy of original line
+    std::string lineC = line;
+    std::string varName;
+//    while(std::count(lineC.begin(), lineC.end(), '[') != 1 && std::count(lineC.begin(), lineC.end(), ']') != 1){
+//        std::cout << lineC << std::endl;
+//    }
+//    std::exit(EXIT_SUCCESS);
 
-    temp = removeBrackets(line.c_str(), false);
-    temp = temp.substr(0, temp.find_last_of('\"'));
-    int i = 0;
+    lineC = removeBrackets(lineC, false, squareBrackets);
 
-    i++;
+    varName = line.substr(0, line.find_first_of('['));
+    std::cout << varName << std::endl;
+    compileExpression(varName);
+    compileExpression(lineC);
+    vmFile.writeArithmetic("+");
+}
 
-    while (i < temp.length()){
-        while((i < temp.length())){
-            if (temp.at(i) == '"' ){
-                if (!std::isalpha(temp.at(i+1))){
-                    break;
-                }
-                i++;
-            }
-            std::cout << temp.at(i) << ": " << i << std::endl;
-            token.push_back(temp.at(i));
-            i++;
-        }
-        params.push_back(token);
-        if (i + 1 < temp.length()){
-            temp = temp.substr(i+1);
+void CompilationEngine::pushVariable(std::string &variableName) {
+    if (classSymbolTable.index(variableName.c_str()) != -1 || subroutineSymbolTable.index(variableName.c_str()) != -1){
+        if (classSymbolTable.index(variableName.c_str()) != -1){
+             vmFile.writePush(classSymbolTable.kind(variableName), classSymbolTable.index(variableName.c_str()));
         }
         else{
-            return params;
+            vmFile.writePush(subroutineSymbolTable.kind(variableName), subroutineSymbolTable.index(variableName.c_str()));
         }
-
-        auto id =  temp.find_first_of('"');
-        if (id == std::string::npos){
-            return params;
-        }
-        temp = temp.substr(id);
-        token.clear();
-        i = 0;
     }
-
-    return params;
 }

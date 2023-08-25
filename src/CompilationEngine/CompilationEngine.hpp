@@ -17,7 +17,7 @@ static CODE validBooleanOp = {"&", "|"};
 
 class CompilationEngine {
 public:
-    explicit CompilationEngine(std::string fName);
+    [[maybe_unused]] explicit CompilationEngine(std::string fName);
     CODE vmCode = {};
 
 private:
@@ -53,12 +53,15 @@ private:
     int m_currentLine;
     int m_continueWhileLabelCount = 0;
     int m_whileLabelCount = 0;
+    bool m_isArrayDec = false;
 
 private:
     std::string m_currentSubroutineDef;
     std::string m_currentSubroutineDecType;
     std::unordered_map<std::string, int> labelCounts;
     std::string generateLabel(const std::string& labelType);
+    std::unordered_map<std::string, std::string> squareBrackets = {{"[", "]"}};
+    std::unordered_map<std::string, std::string> roundBrackets = {{"(", ")"}};
 
 public:
     void compileIf();
@@ -69,6 +72,7 @@ public:
     void compileClassVarDec();
     void compileParameterList();
     void compileSubroutineBody();
+    void compileArray(const std::string& line);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
@@ -81,8 +85,8 @@ public:
     static bool isValidName(std::string name);
     void compileExpression(std::string &expr);
     void compileReturn(const std::string& line);
+    void pushVariable(std::string& variableName);
     static std::string clearName(std::string name);
-    static CODE getParameterStrings(std::string const& line);
     static CODE getExpressionVector(std::string expr);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
@@ -90,8 +94,7 @@ public:
     void compileExpressionList(const std::string& expressions);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
-    static std::string removeBrackets(const std::string& str, bool inLine);
-    void callSubroutine(const std::string& line, std::string funcName, int objAddition);
-
     std::unordered_map<std::string, int> getFunctionName(CODE &lineVec);
+    std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);
+    void callSubroutine(const std::string& line, std::string funcName, int objAddition);
 };
