@@ -54,6 +54,7 @@ CompilationEngine::CompilationEngine(std::string fName) {
         }
 
         if (tempTokens[0] == "class") {
+            classSymbolTable.reset();
             compileClass();
         }
     }
@@ -96,6 +97,7 @@ void CompilationEngine::compileClass() {
 
 
 void CompilationEngine::compileClassVarDec() {
+//    subroutineSymbolTable.reset();
     std::string currentLine = getNthToken(m_currentLine);
     auto tokens = JackTokenizer::tokenizeCode(currentLine);
     tempTokens = tokens;
