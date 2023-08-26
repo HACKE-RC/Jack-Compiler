@@ -79,7 +79,6 @@ public:
     void compileTerm(std::string term);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
-    CODE depthSplit(std::string expression);
     void compileStatement(std::string line);
     void compileDo(const std::string& line);
     void compileLet(const std::string& line);
@@ -91,11 +90,12 @@ public:
     static CODE getExpressionVector(std::string expr);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
-    static bool isCharacterPresent(const std::string& str1, char c);
     void compileExpressionList(const std::string& expressions);
+    static bool isCharacterPresent(const std::string& str1, char c);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     std::unordered_map<std::string, int> getFunctionName(CODE &lineVec);
-    std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);
     void callSubroutine(const std::string& line, std::string funcName, int objAddition);
+    CODE depthSplit(std::string expression,const std::unordered_map<std::string, std::string>& brackets);
+    static std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);
 };

@@ -543,7 +543,7 @@ void CompilationEngine::compileExpression(std::string& expr) {
         }
     }
 
-    exprVec = depthSplit(expr);
+    exprVec = depthSplit(expr, roundBrackets);
     if (exprVec.size() == 1){
         exprVec = getExpressionVector(expr);
         exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
@@ -1245,10 +1245,13 @@ void CompilationEngine::removeTabs(std::vector<std::string>& string_vector) {
     }
 }
 
-CODE CompilationEngine::depthSplit(std::string expression){
+CODE CompilationEngine::depthSplit(std::string expression, const std::unordered_map<std::string, std::string>& brackets){
     int depth = 0;
     int index = 0;
     bool foundFirstCloseBracket = false;
+
+    char openBracket = brackets.begin()->first[0];
+    char closeBracket = brackets.begin()->second[0];
 
     if (expression.empty()){
         return {};
@@ -1260,25 +1263,25 @@ CODE CompilationEngine::depthSplit(std::string expression){
     expression.erase(std::remove_if(expression.begin(), expression.end(), ::isspace), expression.end());
 
     for (char &c: expression){
-        if (c == '('){
+        if (c == openBracket){
             if (foundFirstCloseBracket){
                 auto temp = expression.substr(start, index);
-                temp = temp.substr(start, temp.find_last_of(')'));
+                temp = temp.substr(start, temp.find_last_of(closeBracket));
                 auto op = expression.substr(index-1, 1);
                 exprVec.push_back(temp);
                 exprVec.push_back(op);
                 expression = expression.substr(index);
-                CODE k = depthSplit(expression);
+                CODE k = depthSplit(expression, brackets);
                 exprVec.insert(exprVec.end(), k.begin(), k.end());
                 return exprVec;
             }
             depth++;
         }
-        else if ((c == ')') && (!(foundFirstCloseBracket))){
+        else if ((c == closeBracket) && (!(foundFirstCloseBracket))){
             foundFirstCloseBracket = true;
             depth--;
         }
-        else if (c==')'){
+        else if (c==closeBracket){
             depth--;
         }
         index++;
@@ -1315,6 +1318,7 @@ void CompilationEngine::compileArray( std::string& line) {
     std::cout << varName << std::endl;
     compileExpression(varName);
     compileExpression(lineC);
+
     vmFile.writeArithmetic("+");
 
     if (m_isArrayVal){
