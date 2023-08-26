@@ -54,6 +54,7 @@ private:
     int m_continueWhileLabelCount = 0;
     int m_whileLabelCount = 0;
     bool m_isArrayDec = false;
+    bool m_isArrayVal = false;
 
 private:
     std::string m_currentSubroutineDef;
@@ -72,7 +73,7 @@ public:
     void compileClassVarDec();
     void compileParameterList();
     void compileSubroutineBody();
-    void compileArray(const std::string& line);
+    void compileArray(std::string& line);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
@@ -90,7 +91,7 @@ public:
     static CODE getExpressionVector(std::string expr);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
-    bool isCharacterPresent(const std::string& str1, char c);
+    static bool isCharacterPresent(const std::string& str1, char c);
     void compileExpressionList(const std::string& expressions);
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);

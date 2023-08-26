@@ -503,6 +503,9 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
 void CompilationEngine::compileExpression(std::string& expr) {
     CODE exprVec;
 
+    int n = 1;
+    int i = 1;
+
     if (expr.empty()){
         return;
     }
@@ -525,7 +528,19 @@ void CompilationEngine::compileExpression(std::string& expr) {
 
     if (std::count(expr.begin(), expr.end(), ']') >= 1 && std::count(expr.begin(), expr.end(), '[') >= 1){
         compileArray(expr);
-        return;
+
+        if (!expr.empty()){
+//            exprVec = JackTokenizer::tokenizeCode(expr);
+            std::string op(1, expr[0]);
+            if (JackTokenizer::isValid(validOperations, op)){
+                expr = expr.substr(1);
+                exprVec.clear();
+                exprVec.push_back(op);
+                exprVec.push_back(expr);
+                n = 0;
+                goto compileExpressionOperation;
+            }
+        }
     }
 
     exprVec = depthSplit(expr);
@@ -563,9 +578,8 @@ void CompilationEngine::compileExpression(std::string& expr) {
         compileTerm(exprVec[0]);
     }
 
+    compileExpressionOperation:
     if (exprVec.size() > 1){
-        int n = 1;
-        int i = 1;
         while(JackTokenizer::isValid(validOperations, exprVec[n])){
             if (n+1 > exprVec.size()){
                 return;
@@ -904,14 +918,20 @@ void CompilationEngine::compileLet(const std::string& line = "") {
             callSubroutine(line, funcName, objAddition);
         }
     }
-//    else if(std::count(value.begin(), value.end(),'[') >= 1 && std::count(value.begin(), value.end(), ']') >= 1){
-//        compileExpression(value);
-//    }
     else{
         CODE expressions = splitString(currentLine, '=');
         std::string expression = expressions[1];
         expression = clearName(expression);
-        compileExpressionList(expression);
+
+        if (std::count(expression.begin(), expression.end(), '[') >= 1 && std::count(expression.begin(), expression.end(), ']') >= 1){
+            m_isArrayVal = true;
+            compileExpression(expression);
+        }
+        else{
+            compileExpressionList(expression);
+        }
+
+//        checks if an array is to be manipulated.
         if (m_isArrayDec){
             vmFile.writePop("temp", 1);
             vmFile.writePop("pointer", 1);
@@ -919,6 +939,8 @@ void CompilationEngine::compileLet(const std::string& line = "") {
             vmFile.writePop("that", 0);
             m_isArrayDec = false;
         }
+
+
     }
 
     if (m_currentSubroutineDecType == "constructor"){
@@ -1273,13 +1295,14 @@ CODE CompilationEngine::depthSplit(std::string expression){
     return exprVec;
 }
 
-void CompilationEngine::compileArray(const std::string& line) {
+void CompilationEngine::compileArray( std::string& line) {
 //    a[5]
 //    push <a>
 //    push constant 5
 //    add
 //  copy of original line
     std::string lineC = line;
+    std::string lineC2 = line;
     std::string varName;
 //    while(std::count(lineC.begin(), lineC.end(), '[') != 1 && std::count(lineC.begin(), lineC.end(), ']') != 1){
 //        std::cout << lineC << std::endl;
@@ -1293,6 +1316,29 @@ void CompilationEngine::compileArray(const std::string& line) {
     compileExpression(varName);
     compileExpression(lineC);
     vmFile.writeArithmetic("+");
+
+    if (m_isArrayVal){
+        vmFile.writePop("pointer", 1);
+        vmFile.writePush("that", 0);
+        lineC2.erase(std::remove_if(lineC2.begin(), lineC2.end(), ::isspace), lineC2.end());
+//        lineC2.pop_back();
+
+//      a[1] = a[c[1]];
+//      a[1] = a[c[1]]
+//      a[0] = a[c] + 1;
+//      a[0] = a[c] + 1 <-
+//
+
+        if (lineC2.back() != ']'){
+            lineC2 = lineC2.substr(lineC2.find_last_of(']') + 1);
+//            std::cout << lineC2 << std::endl;
+//            compileExpression(lineC2);
+            line = lineC2;
+        }
+    }
+    else{
+        line = "";
+    }
 }
 
 void CompilationEngine::pushVariable(std::string &variableName) {
