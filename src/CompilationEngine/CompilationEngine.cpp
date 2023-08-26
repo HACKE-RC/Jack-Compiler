@@ -463,7 +463,6 @@ void CompilationEngine::compileDo(const std::string& line = "") {
         funcName = lineVec[0].substr(0, lineVec[0].find('('));
     }
 
-//    std::unordered_map<std::string, std::string> brackets = {{"(", ")"}};
     expressions = removeBrackets(expressions, false, roundBrackets);
     compileExpressionList(expressions);
     callSubroutine(line, funcName, objAddition);
@@ -1315,7 +1314,18 @@ void CompilationEngine::compileArray( std::string& line) {
     lineC = removeBrackets(lineC, false, squareBrackets);
 
     varName = line.substr(0, line.find_first_of('['));
-    std::cout << varName << std::endl;
+//    auto s = depthSplit(line, squareBrackets);
+//    std::string s;
+//    int i = 0;
+//    for (char c: line){
+//        if ((c != '[') && (c != ']') && !(std::isalnum(c))){
+//            break;
+//        }
+//        i++;
+//    }
+//    s = line.substr(0, i);
+
+//    std::cout << varName << std::endl;
     compileExpression(varName);
     compileExpression(lineC);
 
@@ -1339,9 +1349,13 @@ void CompilationEngine::compileArray( std::string& line) {
 //            compileExpression(lineC2);
             line = lineC2;
         }
+        else{
+            line.clear();
+        }
     }
     else{
-        line = "";
+        line.clear();
+//        line = "";
     }
 }
 
