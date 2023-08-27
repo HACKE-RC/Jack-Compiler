@@ -529,6 +529,9 @@ void CompilationEngine::compileExpression(std::string& expr) {
         auto arrayExpr = compileArray(expr);
         if (!arrayExpr.empty()) {
             exprVec = arrayExpr;
+            if (exprVec.empty()){
+                return;
+            }
             n = 0;
             goto compileExpressionOperation;
         }
@@ -1331,7 +1334,9 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 continue;
             }
             else if (expressionC[i] == '['){
-                expression = expressionC.substr(lastOpIndex+1);
+                expressionC = expressionC.substr(lastOpIndex+1);
+                split.push_back(expressionC);
+                expression = expression.substr(expression.find_first_of(expressionC)+expressionC.length());
                 return split;
             }
         }
@@ -1376,6 +1381,9 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
             auto str = expressionC.substr(0, i + (expressionC.length() - expression.length()));
             split.push_back(str);
             expression = expression.substr(i);
+            if (expression.empty()){
+                return split;
+            }
             auto nonArrayExpr = splitNonArrayExprFromArrayExpr(expression);
             split.insert(split.end(), nonArrayExpr.begin(), nonArrayExpr.end());
             if (!expression.empty()){
@@ -1399,9 +1407,10 @@ CODE CompilationEngine::compileArray( std::string& line) {
     std::string varName;
 
     auto arrayExpr = splitArrayExpr(line);
+    lineC = arrayExpr[0].substr(1);
     lineC = removeBrackets(lineC, false, squareBrackets);
-
     varName = arrayExpr[0].substr(0, arrayExpr[0].find_first_of('['));
+    CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
 
     compileExpression(varName);
     compileExpression(lineC);
@@ -1418,9 +1427,11 @@ CODE CompilationEngine::compileArray( std::string& line) {
 //      a[0] = a[c] + 1;
 //      a[0] = a[c] + 1 <-
 //
-
         if (lineC2.back() != ']'){
             CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
+            return arrayExprVec;
+        }
+        else if (!arrayExprVec.empty()){
             return arrayExprVec;
         }
         else{
@@ -1430,6 +1441,7 @@ CODE CompilationEngine::compileArray( std::string& line) {
     else{
         line.clear();
     }
+    return arrayExprVec;
 }
 
 void CompilationEngine::pushVariable(std::string &variableName) {
