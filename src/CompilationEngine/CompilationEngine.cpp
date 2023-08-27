@@ -526,19 +526,11 @@ void CompilationEngine::compileExpression(std::string& expr) {
     }
 
     if (std::count(expr.begin(), expr.end(), ']') >= 1 && std::count(expr.begin(), expr.end(), '[') >= 1){
-        compileArray(expr);
-
-        if (!expr.empty()){
-//            exprVec = JackTokenizer::tokenizeCode(expr);
-            std::string op(1, expr[0]);
-            if (JackTokenizer::isValid(validOperations, op)){
-                expr = expr.substr(1);
-                exprVec.clear();
-                exprVec.push_back(op);
-                exprVec.push_back(expr);
-                n = 0;
-                goto compileExpressionOperation;
-            }
+        auto arrayExpr = compileArray(expr);
+        if (!arrayExpr.empty()) {
+            exprVec = arrayExpr;
+            n = 0;
+            goto compileExpressionOperation;
         }
     }
 
@@ -1309,12 +1301,8 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
     expressionC.erase(std::remove_if(expressionC.begin(), expressionC.end(), ::isspace), expressionC.end());
     for (; i < expressionC.length(); i++){
         if (i+1 < expressionC.length()){
-//            std::string expr = expressionC.substr(i, 2);
             std::string expr(1, expressionC[i]);
-            if (::isspace(expressionC[i])){
-//                i++;
-                continue;
-            }
+
             if (JackTokenizer::isValid(validOperations, expr)){
                 if (lastOpIndex == -1) {
                     lastOpIndex = i;
@@ -1336,7 +1324,6 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 }
                 else{
                     str += expressionC.substr(i, 1);
-//                    split.push_back(expressionC.substr(i, 1));
                 }
                 continue;
             }
