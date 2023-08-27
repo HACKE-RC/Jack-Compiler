@@ -98,4 +98,8 @@ public:
     void callSubroutine(const std::string& line, std::string funcName, int objAddition);
     CODE depthSplit(std::string expression,const std::unordered_map<std::string, std::string>& brackets);
     static std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);
+
+    static CODE splitArrayExpr(std::string expression);
+
+    static CODE splitNonArrayExprFromArrayExpr(std::string& expression);
 };

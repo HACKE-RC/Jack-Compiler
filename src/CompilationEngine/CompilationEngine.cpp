@@ -1297,6 +1297,105 @@ CODE CompilationEngine::depthSplit(std::string expression, const std::unordered_
     return exprVec;
 }
 
+CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
+    int index = 0;
+    int lastOpIndex = -1;
+    CODE split;
+
+    std::string expressionC;
+    expressionC.assign(expression);
+    std::string str;
+    int i = 0;
+    expressionC.erase(std::remove_if(expressionC.begin(), expressionC.end(), ::isspace), expressionC.end());
+    for (; i < expressionC.length(); i++){
+        if (i+1 < expressionC.length()){
+//            std::string expr = expressionC.substr(i, 2);
+            std::string expr(1, expressionC[i]);
+            if (::isspace(expressionC[i])){
+//                i++;
+                continue;
+            }
+            if (JackTokenizer::isValid(validOperations, expr)){
+                if (lastOpIndex == -1) {
+                    lastOpIndex = i;
+                    split.push_back(expressionC.substr(i, 1));
+                    continue;
+                }
+                else{
+                    split.push_back(str);
+                    split.push_back(expressionC.substr(i, 1));
+                    lastOpIndex = i;
+                    str.clear();
+                    continue;
+                }
+            }
+            else if (std::isalnum(expressionC[i])){
+                if (std::isalnum(expressionC[i + 1])){
+                    i++;
+                    continue;
+                }
+                else{
+                    str += expressionC.substr(i, 1);
+//                    split.push_back(expressionC.substr(i, 1));
+                }
+                continue;
+            }
+            else if (expressionC[i] == ';'){
+                continue;
+            }
+            else if (expressionC[i] == '['){
+                expression = expressionC.substr(lastOpIndex+1);
+                return split;
+            }
+        }
+        else {
+            if (!str.empty()){
+                split.push_back(str);
+                str.clear();
+            }
+        }
+    }
+
+    if (lastOpIndex != -1){
+        expression = expressionC.substr(i);
+    }
+    return split;
+}
+
+CODE CompilationEngine::splitArrayExpr(std::string expression){
+//  this helps keep a copy which is unchanged
+    auto expressionC = expression;
+    expression = expression.substr(expression.find_first_of('['));
+
+    int i = 0, depth = 0;
+    CODE split;
+    bool firstRun = true;
+
+    for (auto c: expression){
+        if (c == '['){
+            ++depth;
+        }
+        else if (c==']'){
+            --depth;
+        }
+        if (depth == 0){
+            ++i;
+            auto str = expressionC.substr(0, i + (expressionC.length() - expression.length()));
+            split.push_back(str);
+            expression = expression.substr(i);
+//            split.push_back(expression);
+            auto nonArrayExpr = splitNonArrayExprFromArrayExpr(expression);
+            split.insert(split.end(), nonArrayExpr.begin(), nonArrayExpr.end());
+            if (!expression.empty()){
+                continue;
+            }
+            return split;
+        }
+        i++;
+    }
+    return split;
+}
+
 void CompilationEngine::compileArray( std::string& line) {
 //    a[5]
 //    push <a>

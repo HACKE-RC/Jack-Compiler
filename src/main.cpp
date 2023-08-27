@@ -13,7 +13,6 @@ int main(int argc, char* argv[]){
 //    tokenizer.cleanCode();
 //    tokenizer.tokenizeAllCode();
     CompilationEngine compiler(argv[1]);
-//    compiler.depthSplit("(((y + size) < 254) & ((x + size) < 510))");
 
     return 0;
 }
