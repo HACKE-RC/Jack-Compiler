@@ -73,7 +73,7 @@ public:
     void compileClassVarDec();
     void compileParameterList();
     void compileSubroutineBody();
-    void compileArray(std::string& line);
+    CODE compileArray(std::string& line);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);

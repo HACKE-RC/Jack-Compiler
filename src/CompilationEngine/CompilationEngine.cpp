@@ -1348,12 +1348,18 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 return split;
             }
         }
+        else if (std::isalnum(expressionC[i])){
+            str += expressionC.substr(i, 1);
+        }
         else {
             if (!str.empty()){
                 split.push_back(str);
                 str.clear();
             }
         }
+    }
+    if (!str.empty()){
+        split.push_back(str);
     }
 
     if (lastOpIndex != -1){
@@ -1383,7 +1389,6 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
             auto str = expressionC.substr(0, i + (expressionC.length() - expression.length()));
             split.push_back(str);
             expression = expression.substr(i);
-//            split.push_back(expression);
             auto nonArrayExpr = splitNonArrayExprFromArrayExpr(expression);
             split.insert(split.end(), nonArrayExpr.begin(), nonArrayExpr.end());
             if (!expression.empty()){
@@ -1396,7 +1401,7 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
     return split;
 }
 
-void CompilationEngine::compileArray( std::string& line) {
+CODE CompilationEngine::compileArray( std::string& line) {
 //    a[5]
 //    push <a>
 //    push constant 5
@@ -1405,26 +1410,12 @@ void CompilationEngine::compileArray( std::string& line) {
     std::string lineC = line;
     std::string lineC2 = line;
     std::string varName;
-//    while(std::count(lineC.begin(), lineC.end(), '[') != 1 && std::count(lineC.begin(), lineC.end(), ']') != 1){
-//        std::cout << lineC << std::endl;
-//    }
-//    std::exit(EXIT_SUCCESS);
 
+    auto arrayExpr = splitArrayExpr(line);
     lineC = removeBrackets(lineC, false, squareBrackets);
 
-    varName = line.substr(0, line.find_first_of('['));
-//    auto s = depthSplit(line, squareBrackets);
-//    std::string s;
-//    int i = 0;
-//    for (char c: line){
-//        if ((c != '[') && (c != ']') && !(std::isalnum(c))){
-//            break;
-//        }
-//        i++;
-//    }
-//    s = line.substr(0, i);
+    varName = arrayExpr[0].substr(0, arrayExpr[0].find_first_of('['));
 
-//    std::cout << varName << std::endl;
     compileExpression(varName);
     compileExpression(lineC);
 
@@ -1434,7 +1425,6 @@ void CompilationEngine::compileArray( std::string& line) {
         vmFile.writePop("pointer", 1);
         vmFile.writePush("that", 0);
         lineC2.erase(std::remove_if(lineC2.begin(), lineC2.end(), ::isspace), lineC2.end());
-//        lineC2.pop_back();
 
 //      a[1] = a[c[1]];
 //      a[1] = a[c[1]]
@@ -1443,10 +1433,8 @@ void CompilationEngine::compileArray( std::string& line) {
 //
 
         if (lineC2.back() != ']'){
-            lineC2 = lineC2.substr(lineC2.find_last_of(']') + 1);
-//            std::cout << lineC2 << std::endl;
-//            compileExpression(lineC2);
-            line = lineC2;
+            CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
+            return arrayExprVec;
         }
         else{
             line.clear();
@@ -1454,7 +1442,6 @@ void CompilationEngine::compileArray( std::string& line) {
     }
     else{
         line.clear();
-//        line = "";
     }
 }
 
