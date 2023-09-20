@@ -1428,7 +1428,7 @@ CODE CompilationEngine::compileArray( std::string& line) {
 //      a[0] = a[c] + 1 <-
 //
         if (lineC2.back() != ']'){
-            CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
+//            CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
             return arrayExprVec;
         }
         else if (!arrayExprVec.empty()){
