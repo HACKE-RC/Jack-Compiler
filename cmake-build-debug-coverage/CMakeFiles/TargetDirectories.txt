@@ -1,3 +1,0 @@
-C:/Users/MODX/CLionProjects/Jack-Lex/cmake-build-debug-coverage/CMakeFiles/Jack_Lex.dir
-C:/Users/MODX/CLionProjects/Jack-Lex/cmake-build-debug-coverage/CMakeFiles/edit_cache.dir
-C:/Users/MODX/CLionProjects/Jack-Lex/cmake-build-debug-coverage/CMakeFiles/rebuild_cache.dir
