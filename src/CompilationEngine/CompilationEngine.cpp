@@ -525,7 +525,21 @@ void CompilationEngine::compileExpression(std::string& expr) {
         return;
     }
 
-    if (std::count(expr.begin(), expr.end(), ']') >= 1 && std::count(expr.begin(), expr.end(), '[') >= 1){
+    auto isArray = [](std::string &str) -> bool {return (std::count(str.begin(), str.end(), ']') >= 1 && std::count(str.begin(), str.end(), '[') >= 1);};
+    if (isArray(expr)){
+        auto exprC = expr;
+        while (exprC.starts_with('(') && exprC.ends_with(')')){
+            prioritizeBrackets(exprC);
+            exprC = removeBrackets(exprC, false, roundBrackets);
+        }
+
+        auto arrayExprk = splitNonArrayExprFromArrayExpr(exprC);
+        if (arrayExprk.size() > 1){
+            exprVec = arrayExprk;
+//            goto compileExpressionOperation;
+            goto skipVecDec;
+        }
+
         auto arrayExpr = compileArray(expr);
         if (!arrayExpr.empty()) {
             exprVec = arrayExpr;
@@ -538,6 +552,7 @@ void CompilationEngine::compileExpression(std::string& expr) {
     }
 
     exprVec = depthSplit(expr, roundBrackets);
+    skipVecDec:
     if (exprVec.size() == 1){
         exprVec = getExpressionVector(expr);
         exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
@@ -1304,11 +1319,21 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
     expressionC.erase(std::remove_if(expressionC.begin(), expressionC.end(), ::isspace), expressionC.end());
     for (; i < expressionC.length(); i++){
         if (i+1 < expressionC.length()){
-            std::string expr(1, expressionC[i]);
+            std::string expr(0, expressionC[i]);
+
+            if (!isNumber(expressionC[i])){
+//                expr.erase(0, 1);
+//                expr = expr.substr(1, expressionC[i]);
+                expr = expressionC[i];
+            }
 
             if (JackTokenizer::isValid(validOperations, expr)){
                 if (lastOpIndex == -1) {
                     lastOpIndex = i;
+                    if (!str.empty()){
+                        split.push_back(str);
+                        str.clear();
+                    }
                     split.push_back(expressionC.substr(i, 1));
                     continue;
                 }
@@ -1333,11 +1358,20 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
             else if (expressionC[i] == ';'){
                 continue;
             }
-            else if (expressionC[i] == '['){
-                expressionC = expressionC.substr(lastOpIndex+1);
+            else if (expressionC.ends_with(']') && !expressionC.starts_with('[')){
                 split.push_back(expressionC);
-                expression = expression.substr(expression.find_first_of(expressionC)+expressionC.length());
                 return split;
+            }
+            else if (expressionC[i] == '['){
+                auto s = expressionC.substr(lastOpIndex+1, expressionC.find_first_of(']') - lastOpIndex);
+                split.push_back(s);
+                expressionC = expressionC.substr(expressionC.find_first_of(']') + 1);
+                str.clear();
+                lastOpIndex = -1;
+//                expression = expression.substr(expression.find_first_of(expressionC)+expressionC.length());
+                i = 0;
+                continue;
+//                return split;
             }
         }
         else if (std::isalnum(expressionC[i])){
@@ -1376,6 +1410,14 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
         else if (c==']'){
             --depth;
         }
+//        else if (c == '('){
+//            auto s = expression.substr(i, expression.find_last_of(')'));
+//            compileExpression(s);
+//            expression = expression.substr(expression.find_last_of(')') + 1);
+//            if (!expression.empty()){
+//                continue;
+//            }
+//        }
         if (depth == 0){
             ++i;
             auto str = expressionC.substr(0, i + (expressionC.length() - expression.length()));
@@ -1386,9 +1428,6 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
             }
             auto nonArrayExpr = splitNonArrayExprFromArrayExpr(expression);
             split.insert(split.end(), nonArrayExpr.begin(), nonArrayExpr.end());
-            if (!expression.empty()){
-                continue;
-            }
             return split;
         }
         i++;
@@ -1397,11 +1436,6 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
 }
 
 CODE CompilationEngine::compileArray( std::string& line) {
-//    a[5]
-//    push <a>
-//    push constant 5
-//    add
-//  copy of original line
     std::string lineC = line;
     std::string lineC2 = line;
     std::string varName;

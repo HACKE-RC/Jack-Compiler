@@ -73,10 +73,10 @@ public:
     void compileClassVarDec();
     void compileParameterList();
     void compileSubroutineBody();
-    CODE compileArray(std::string& line);
     static bool isNumber(char &ch);
     std::string getNthToken(int n);
     void compileTerm(std::string term);
+    CODE compileArray(std::string& line);
     static CODE removeBrackets(CODE code);
     static bool isNumber(std::string &str);
     void compileStatement(std::string line);
@@ -88,6 +88,7 @@ public:
     void pushVariable(std::string& variableName);
     static std::string clearName(std::string name);
     static CODE getExpressionVector(std::string expr);
+    CODE splitArrayExpr(std::string expression);
     static long long countParameters(CODE parameterList);
     std::string prioritizeBrackets(std::string& expression);
     void compileExpressionList(const std::string& expressions);
@@ -95,11 +96,8 @@ public:
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     std::unordered_map<std::string, int> getFunctionName(CODE &lineVec);
+    static CODE splitNonArrayExprFromArrayExpr(std::string& expression);
     void callSubroutine(const std::string& line, std::string funcName, int objAddition);
     CODE depthSplit(std::string expression,const std::unordered_map<std::string, std::string>& brackets);
     static std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);
-
-    static CODE splitArrayExpr(std::string expression);
-
-    static CODE splitNonArrayExprFromArrayExpr(std::string& expression);
 };
