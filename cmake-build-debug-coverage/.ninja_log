@@ -1,0 +1,5 @@
+# ninja log v5
+5	784	7081022849432203	CMakeFiles/Jack_Lex.dir/src/main.cpp.obj	7f73bcf6d4dd98fd
+0	1295	7081022854532249	CMakeFiles/Jack_Lex.dir/src/JackTokenizer/JackTokenizer.cpp.obj	9ff6a087b6778712
+3	1538	7081022856930071	CMakeFiles/Jack_Lex.dir/src/pugixml/pugixml.cpp.obj	69e2e43beba2d030
+1538	1737	7081022858923405	Jack_Lex.exe	94b14054cb3296eb

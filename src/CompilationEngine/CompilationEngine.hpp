@@ -96,7 +96,7 @@ public:
     static void removeTabs(std::vector<std::string>& string_vector);
     std::vector<std::string> splitString(std::string &str, char delim);
     std::unordered_map<std::string, int> getFunctionName(CODE &lineVec);
-    static CODE splitNonArrayExprFromArrayExpr(std::string& expression);
+    CODE splitNonArrayExprFromArrayExpr(std::string& expression);
     void callSubroutine(const std::string& line, std::string funcName, int objAddition);
     CODE depthSplit(std::string expression,const std::unordered_map<std::string, std::string>& brackets);
     static std::string removeBrackets(const std::string& str, bool inLine, const std::unordered_map<std::string, std::string>& brackets);

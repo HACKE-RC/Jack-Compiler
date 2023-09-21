@@ -1,0 +1,59 @@
+        -:    0:Source:C:/Users/MODX/CLionProjects/Jack-Lex/src/main.cpp
+        -:    0:Graph:C:\Users\MODX\CLionProjects\Jack-Lex\cmake-build-debug-coverage\CMakeFiles\Jack_Lex.dir\src\main.cpp.gcno
+        -:    0:Data:C:\Users\MODX\CLionProjects\Jack-Lex\cmake-build-debug-coverage\CMakeFiles\Jack_Lex.dir\src\main.cpp.gcda
+        -:    0:Runs:1
+        -:    1:#include <iostream>
+        -:    2:#include "JackTokenizer/JackTokenizer.hpp"
+        -:    3:
+function main called 1 returned 100% blocks executed 55%
+        1:    4:int main(int argc, char* argv[]){
+        1:    5:    if (argc < 2){
+        1:    5-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+    #####:    6:        return -1;
+    %%%%%:    6-block  0
+        -:    7:    }
+        2:    8:    JackTokenizer tokenizer(argv[1], "test.tst");
+        1:    8-block  0
+call    0 returned 1
+call    1 returned 1
+branch  2 taken 1 (fallthrough)
+branch  3 taken 0 (throw)
+        1:    8-block  1
+call    4 returned 1
+call    5 returned 1
+branch  6 taken 1 (fallthrough)
+branch  7 taken 0 (throw)
+        1:    8-block  2
+call    8 returned 1
+branch  9 taken 1 (fallthrough)
+branch 10 taken 0 (throw)
+call   11 returned 1
+call   12 returned 1
+call   13 returned 1
+    $$$$$:    8-block  3
+    $$$$$:    8-block  4
+    $$$$$:    8-block  5
+    $$$$$:    8-block  6
+        1:    9:    tokenizer.cleanCode();
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   10:    tokenizer.tokenizeCode();
+        1:   10-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   11:    CODE vec;
+        1:   11-block  0
+call    0 returned 1
+        -:   12://    JackTokenizer::test();
+        -:   13://    std::string s = "new(int Ax, int Ay, int Asize)";
+        -:   14://    JackTokenizer::parseFuncParams(s, vec);
+        1:   15:    return 0;
+        1:   16:}
+call    0 returned 1
+call    1 returned 1
+    $$$$$:   16-block  0
+call    2 never executed

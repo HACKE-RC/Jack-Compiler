@@ -1,0 +1,199 @@
+        -:    0:Source:C:/PROGRA~1/JETBRA~1/CLION2~1.2/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/codecvt
+        -:    0:Graph:C:\Users\MODX\CLionProjects\Jack-Lex\cmake-build-debug-coverage\CMakeFiles\Jack_Lex.dir\src\JackTokenizer\JackTokenizer.cpp.gcno
+        -:    0:Data:C:\Users\MODX\CLionProjects\Jack-Lex\cmake-build-debug-coverage\CMakeFiles\Jack_Lex.dir\src\JackTokenizer\JackTokenizer.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// <codecvt> -*- C++ -*-
+        -:    2:
+        -:    3:// Copyright (C) 2015-2021 Free Software Foundation, Inc.
+        -:    4://
+        -:    5:// This file is part of the GNU ISO C++ Library.  This library is free
+        -:    6:// software; you can redistribute it and/or modify it under the
+        -:    7:// terms of the GNU General Public License as published by the
+        -:    8:// Free Software Foundation; either version 3, or (at your option)
+        -:    9:// any later version.
+        -:   10:
+        -:   11:// This library is distributed in the hope that it will be useful,
+        -:   12:// but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   13:// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   14:// GNU General Public License for more details.
+        -:   15:
+        -:   16:// Under Section 7 of GPL version 3, you are granted additional
+        -:   17:// permissions described in the GCC Runtime Library Exception, version
+        -:   18:// 3.1, as published by the Free Software Foundation.
+        -:   19:
+        -:   20:// You should have received a copy of the GNU General Public License and
+        -:   21:// a copy of the GCC Runtime Library Exception along with this program;
+        -:   22:// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+        -:   23:// <http://www.gnu.org/licenses/>.
+        -:   24:
+        -:   25:// ISO C++ 14882: 22.5  Standard code conversion facets
+        -:   26:
+        -:   27:/** @file include/codecvt
+        -:   28: *  This is a Standard C++ Library header.
+        -:   29: */
+        -:   30:
+        -:   31:#ifndef _GLIBCXX_CODECVT
+        -:   32:#define _GLIBCXX_CODECVT 1
+        -:   33:
+        -:   34:#pragma GCC system_header
+        -:   35:
+        -:   36:#if __cplusplus < 201103L
+        -:   37:# include <bits/c++0x_warning.h>
+        -:   38:#else
+        -:   39:
+        -:   40:#include <bits/locale_classes.h>
+        -:   41:#include <bits/codecvt.h>
+        -:   42:
+        -:   43:namespace std _GLIBCXX_VISIBILITY(default)
+        -:   44:{
+        -:   45:_GLIBCXX_BEGIN_NAMESPACE_VERSION
+        -:   46:
+        -:   47:  enum codecvt_mode
+        -:   48:  {
+        -:   49:    consume_header = 4,
+        -:   50:    generate_header = 2,
+        -:   51:    little_endian = 1
+        -:   52:  };
+        -:   53:
+        -:   54:  template<typename _Elem, unsigned long _Maxcode = 0x10ffff,
+        -:   55:	   codecvt_mode _Mode = (codecvt_mode)0>
+        -:   56:    class codecvt_utf8 : public codecvt<_Elem, char, mbstate_t>
+        -:   57:    {
+        -:   58:    public:
+        -:   59:      explicit
+        -:   60:      codecvt_utf8(size_t __refs = 0);
+        -:   61:
+        -:   62:      ~codecvt_utf8();
+        -:   63:    };
+        -:   64:
+        -:   65:  template<typename _Elem, unsigned long _Maxcode = 0x10ffff,
+        -:   66:	   codecvt_mode _Mode = (codecvt_mode)0>
+        -:   67:    class codecvt_utf16 : public codecvt<_Elem, char, mbstate_t>
+        -:   68:    {
+        -:   69:    public:
+        -:   70:      explicit
+        -:   71:      codecvt_utf16(size_t __refs = 0);
+        -:   72:
+        -:   73:      ~codecvt_utf16();
+        -:   74:    };
+        -:   75:
+        -:   76:  template<typename _Elem, unsigned long _Maxcode = 0x10ffff,
+        -:   77:	   codecvt_mode _Mode = (codecvt_mode)0>
+        -:   78:    class codecvt_utf8_utf16 : public codecvt<_Elem, char, mbstate_t>
+        -:   79:    {
+        -:   80:    public:
+        -:   81:      explicit
+        -:   82:      codecvt_utf8_utf16(size_t __refs = 0);
+        -:   83:
+        -:   84:      ~codecvt_utf8_utf16();
+        -:   85:    };
+        -:   86:
+        -:   87:#define _GLIBCXX_CODECVT_SPECIALIZATION2(_NAME, _ELEM) \
+        -:   88:  template<> \
+        -:   89:    class _NAME<_ELEM> \
+        -:   90:    : public codecvt<_ELEM, char, mbstate_t> \
+        -:   91:    { \
+        -:   92:    public: \
+        -:   93:      typedef _ELEM			intern_type; \
+        -:   94:      typedef char			extern_type; \
+        -:   95:      typedef mbstate_t			state_type; \
+        -:   96: \
+        -:   97:    protected: \
+        -:   98:      _NAME(unsigned long __maxcode, codecvt_mode __mode, size_t __refs) \
+        -:   99:      : codecvt(__refs), _M_maxcode(__maxcode), _M_mode(__mode) { } \
+        -:  100: \
+        -:  101:      virtual \
+        -:  102:      ~_NAME(); \
+        -:  103: \
+        -:  104:      virtual result \
+        -:  105:      do_out(state_type& __state, const intern_type* __from, \
+        -:  106:	     const intern_type* __from_end, const intern_type*& __from_next, \
+        -:  107:	     extern_type* __to, extern_type* __to_end, \
+        -:  108:	     extern_type*& __to_next) const; \
+        -:  109: \
+        -:  110:      virtual result \
+        -:  111:      do_unshift(state_type& __state, \
+        -:  112:		 extern_type* __to, extern_type* __to_end, \
+        -:  113:		 extern_type*& __to_next) const; \
+        -:  114: \
+        -:  115:      virtual result \
+        -:  116:      do_in(state_type& __state, \
+        -:  117:	     const extern_type* __from, const extern_type* __from_end, \
+        -:  118:	     const extern_type*& __from_next, \
+        -:  119:	     intern_type* __to, intern_type* __to_end, \
+        -:  120:	     intern_type*& __to_next) const; \
+        -:  121: \
+        -:  122:      virtual \
+        -:  123:      int do_encoding() const throw(); \
+        -:  124: \
+        -:  125:      virtual \
+        -:  126:      bool do_always_noconv() const throw(); \
+        -:  127: \
+        -:  128:      virtual \
+        -:  129:      int do_length(state_type&, const extern_type* __from, \
+        -:  130:		    const extern_type* __end, size_t __max) const; \
+        -:  131: \
+        -:  132:      virtual int \
+        -:  133:      do_max_length() const throw(); \
+        -:  134: \
+        -:  135:    private: \
+        -:  136:      unsigned long	_M_maxcode; \
+        -:  137:      codecvt_mode	_M_mode; \
+        -:  138:    }
+        -:  139:
+        -:  140:#define _GLIBCXX_CODECVT_SPECIALIZATION(_NAME, _ELEM) \
+        -:  141:  _GLIBCXX_CODECVT_SPECIALIZATION2(__ ## _NAME ## _base, _ELEM); \
+        -:  142:  template<unsigned long _Maxcode, codecvt_mode _Mode> \
+        -:  143:    class _NAME<_ELEM, _Maxcode, _Mode> \
+        -:  144:    : public __ ## _NAME ## _base<_ELEM> \
+        -:  145:    { \
+        -:  146:    public: \
+        -:  147:      explicit \
+        -:  148:      _NAME(size_t __refs = 0) \
+        -:  149:      : __ ## _NAME ## _base<_ELEM>(std::min(_Maxcode, 0x10fffful), \
+        -:  150:				    _Mode, __refs) \
+        -:  151:      { } \
+        -:  152:    }
+        -:  153:
+        -:  154:  template<typename _Elem> class __codecvt_utf8_base;
+        -:  155:  template<typename _Elem> class __codecvt_utf16_base;
+        -:  156:  template<typename _Elem> class __codecvt_utf8_utf16_base;
+        -:  157:
+        -:  158:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8, char16_t);
+        -:  159:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf16, char16_t);
+        -:  160:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8_utf16, char16_t);
+        -:  161:
+        -:  162:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8, char32_t);
+        -:  163:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf16, char32_t);
+        -:  164:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8_utf16, char32_t);
+        -:  165:
+        -:  166:#ifdef _GLIBCXX_USE_WCHAR_T
+        -:  167:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8, wchar_t);
+        -:  168:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf16, wchar_t);
+    #####:  169:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8_utf16, wchar_t);
+------------------
+_ZNSt18codecvt_utf8_utf16IwLm1114111ELSt12codecvt_mode0EEC1Ey:
+function _ZNSt18codecvt_utf8_utf16IwLm1114111ELSt12codecvt_mode0EEC1Ey called 0 returned 0% blocks executed 0%
+    #####:  169:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8_utf16, wchar_t);
+    %%%%%:  169-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  169-block  1
+    $$$$$:  169-block  2
+------------------
+_ZNSt25__codecvt_utf8_utf16_baseIwEC2EmSt12codecvt_modey:
+function _ZNSt25__codecvt_utf8_utf16_baseIwEC2EmSt12codecvt_modey called 0 returned 0% blocks executed 0%
+    #####:  169:  _GLIBCXX_CODECVT_SPECIALIZATION(codecvt_utf8_utf16, wchar_t);
+    %%%%%:  169-block  0
+call    0 never executed
+------------------
+        -:  170:#endif
+        -:  171:
+        -:  172:_GLIBCXX_END_NAMESPACE_VERSION
+        -:  173:} // namespace
+        -:  174:
+        -:  175:#endif // C++11
+        -:  176:
+        -:  177:#endif /* _GLIBCXX_CODECVT */
