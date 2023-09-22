@@ -474,6 +474,12 @@ void CompilationEngine::compileDo(const std::string& line = "") {
 
     if (line.find('(') != std::string::npos && line.find(')') != std::string::npos){
         expressions = removeBrackets(line, false, roundBrackets);
+        if (!expressions.empty()){
+            auto k = splitString(expressions, ',');
+            if (!k.empty()){
+                objAddition = k.size();
+            }
+        }
     }
     else{
         if (line.find('(') == std::string::npos){
