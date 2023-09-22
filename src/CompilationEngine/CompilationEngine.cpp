@@ -572,6 +572,12 @@ void CompilationEngine::compileExpression(std::string& expr) {
         exprVec.erase(std::remove_if(exprVec.begin(), exprVec.end(), [](const std::string& string) {
             return string.empty();
         }), exprVec.end());
+
+        if (exprVec[0].find('.')!=std::string::npos &&  exprVec[0].find('(') != std::string::npos &&  exprVec[0].ends_with(')')){
+//            auto funcName = exprVec[0].substr(0, exprVec[0].find('('));
+            compileDo(exprVec[0]);
+            return;
+        }
     }
 
     if (exprVec.empty()){
@@ -945,6 +951,10 @@ void CompilationEngine::compileLet(const std::string& line = "") {
         CODE expressions = splitString(currentLine, '=');
         std::string expression = expressions[1];
         expression = clearName(expression);
+        if (expression == "null"){
+             vmFile.writePush("constant", 0);
+             goto skipExpressionParsing;
+        }
 
         if (std::count(expression.begin(), expression.end(), '[') >= 1 && std::count(expression.begin(), expression.end(), ']') >= 1){
             m_isArrayVal = true;
@@ -955,6 +965,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
         }
 
 //        checks if an array is to be manipulated.
+        skipExpressionParsing:
         if (m_isArrayDec){
             vmFile.writePop("temp", 1);
             vmFile.writePop("pointer", 1);
@@ -1336,8 +1347,6 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
             std::string expr(0, expressionC[i]);
 
             if (!isNumber(expressionC[i])){
-//                expr.erase(0, 1);
-//                expr = expr.substr(1, expressionC[i]);
                 expr = expressionC[i];
             }
 
@@ -1351,12 +1360,28 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                     split.push_back(expressionC.substr(i, 1));
                     auto isArray = [](std::string str) -> bool {return (std::count(str.begin(), str.end(), ']') >= 1 && std::count(str.begin(), str.end(), '[') >= 1);};
                     if (!isArray(expressionC.substr(i+1))) {
-//                         TODOx: make compileExpression able to call functions by seeing dots or brackets.
                         if (expressionC.find('.') != std::string::npos) {
-                            auto k = expressionC.substr(i + 1);
-                            compileDo(k);
-//                            callSubroutine(k, k.substr(0, k.find_first_of('(')), 0);
-                            break;
+                            if (expressionC.find('(') != std::string::npos){
+                                if (expressionC.back() != ')' && expressionC.find(')') == std::string::npos){
+                                    expressionC += ')';
+                                    auto k = expressionC.substr(i + 1);
+                                    split.push_back(k);
+                                    break;
+                                }
+                                else if (expressionC.find(')') != std::string::npos){
+                                    if (expressionC.back() != ')'){
+                                        auto k = expressionC.substr(i + 1);
+                                        k = k.substr(0, k.find_first_of(')') + 1);
+                                        split.push_back(k);
+                                        i = -1;
+                                        lastOpIndex = -1;
+                                        expressionC = expressionC.substr(expressionC.find_first_of(k) + k.length() + 2);
+                                    }
+                                }
+                                else {
+                                    continue;
+                                }
+                            }
                         }
                     }
                     continue;
@@ -1392,10 +1417,8 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 expressionC = expressionC.substr(expressionC.find_first_of(']') + 1);
                 str.clear();
                 lastOpIndex = -1;
-//                expression = expression.substr(expression.find_first_of(expressionC)+expressionC.length());
                 i = 0;
                 continue;
-//                return split;
             }
         }
         else if (std::isalnum(expressionC[i])){
@@ -1473,13 +1496,7 @@ CODE CompilationEngine::compileArray( std::string& line) {
         vmFile.writePush("that", 0);
         lineC2.erase(std::remove_if(lineC2.begin(), lineC2.end(), ::isspace), lineC2.end());
 
-//      a[1] = a[c[1]];
-//      a[1] = a[c[1]]
-//      a[0] = a[c] + 1;
-//      a[0] = a[c] + 1 <-
-//
         if (lineC2.back() != ']'){
-//            CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
             return arrayExprVec;
         }
         else if (!arrayExprVec.empty()){
