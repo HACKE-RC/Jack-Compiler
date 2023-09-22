@@ -616,8 +616,10 @@ void CompilationEngine::compileExpression(std::string& expr) {
             while(exprVec[n+i] == ")"){
                 i++;
             }
-
-            if (exprVec[n+i] == "-"){
+            if (exprVec[n+i] == "null"){
+                vmFile.writePush("constant", 0);
+            }
+            else if (exprVec[n+i] == "-"){
                 compileTerm(exprVec[n+i+1]);
                 vmFile.writeNeg();
                 i++;
@@ -1404,6 +1406,9 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 continue;
             }
             else if (expressionC.ends_with(']') && !expressionC.starts_with('[')){
+                if (lastOpIndex!=-1){
+                    expressionC.erase(0, 1);
+                }
                 split.push_back(expressionC);
                 return split;
             }
