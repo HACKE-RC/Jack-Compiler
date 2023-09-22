@@ -97,7 +97,6 @@ void CompilationEngine::compileClass() {
 
 
 void CompilationEngine::compileClassVarDec() {
-//    subroutineSymbolTable.reset();
     std::string currentLine = getNthToken(m_currentLine);
     auto tokens = JackTokenizer::tokenizeCode(currentLine);
     tempTokens = tokens;
@@ -475,7 +474,6 @@ void CompilationEngine::compileDo(const std::string& line = "") {
         }
     }
 
-//    expressions = removeBrackets(expressions, false, roundBrackets);
     compileExpressionList(expressions);
     callSubroutine(line, funcName, objAddition);
     vmFile.writePop("temp", 0);
@@ -550,7 +548,6 @@ void CompilationEngine::compileExpression(std::string& expr) {
         auto arrayExprk = splitNonArrayExprFromArrayExpr(exprC);
         if (arrayExprk.size() > 1){
             exprVec = arrayExprk;
-//            goto compileExpressionOperation;
             goto skipVecDec;
         }
 
@@ -574,7 +571,6 @@ void CompilationEngine::compileExpression(std::string& expr) {
         }), exprVec.end());
 
         if (exprVec[0].find('.')!=std::string::npos &&  exprVec[0].find('(') != std::string::npos &&  exprVec[0].ends_with(')')){
-//            auto funcName = exprVec[0].substr(0, exprVec[0].find('('));
             compileDo(exprVec[0]);
             return;
         }
