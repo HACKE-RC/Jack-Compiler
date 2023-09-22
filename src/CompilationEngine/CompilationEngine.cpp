@@ -290,7 +290,7 @@ void CompilationEngine::compileParameterList() {
         auto index2 =  std::find(tempTokens.begin(), tempTokens.end(), ")");
         if ((index2 != tempTokens.end()) && (std::distance(tempTokens.begin(), index) + 1 != std::distance(tempTokens.begin(), index2))){
             auto index3 = std::distance(tempTokens.begin(), index);
-            if (JackTokenizer::isValid(validVarTypes, tempTokens.at(index3+1))){
+            if (JackTokenizer::isValid(validVarTypes, tempTokens.at(index3+1)) || JackTokenizer::isValid(validComplimentaryVarTypes, tempTokens.at(index3+1))){
                 if (isValidName(tempTokens.at(index3+2))){
                     auto tempTokens2 = tempTokens;
                     std::vector<std::string> parameters = removeBrackets(tempTokens2);
@@ -317,6 +317,8 @@ long long CompilationEngine::countParameters(CODE parameterList) {
     count += std::count(parameterList.begin(), parameterList.end(), "boolean");
     count += std::count(parameterList.begin(), parameterList.end(), "bool");
     count += std::count(parameterList.begin(), parameterList.end(), "char");
+    count += std::count(parameterList.begin(), parameterList.end(), "String");
+    count += std::count(parameterList.begin(), parameterList.end(), "Array");
     return count;
 }
 
@@ -400,7 +402,7 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
         funcName2 = funcName2.substr(funcName2.find('.') + 1);
 
         if (JackTokenizer::isValid(validVarTypes, objName)){
-            std::cerr << "Cannot use '.' operator on predefined types." << std::endl;
+                std::cerr << "Cannot use '.' operator on predefined types." << std::endl;
         }
         else if ((subroutineSymbolTable.index(objName.c_str()) != -1) || (classSymbolTable.index(objName.c_str())) != -1) {
             if (subroutineSymbolTable.index(objName.c_str()) != -1) {

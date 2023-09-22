@@ -10,6 +10,7 @@
 #include "../VMWriter/VMWriter.hpp"
 
 static CODE validVarTypes = {"int", "char", "boolean"};
+static CODE validComplimentaryVarTypes = {"Array", "String"};
 static CODE validSubroutineTypes = {"void", "int", "boolean", "char"};
 static CODE validStatementInitials = {"var", "let", "do", "if", "else", "while", "return"};
 static std::vector<char> validPositiveInt = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
