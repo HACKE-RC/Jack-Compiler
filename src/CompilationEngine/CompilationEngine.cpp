@@ -392,37 +392,44 @@ void CompilationEngine::compileStatement(std::string line = "") {
 std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& lineVec) {
     std::unordered_map<std::string, int> functionData = {};
 //  this helps ignore "do" in do's case and = in let's case
-    std::string funcName2 = lineVec[1];
+    std::string methodName = lineVec[1];
     std::string funcName;
     int objAddition = 0;
 
-    funcName2 = lineVec[1].substr(0,  funcName2 .find('('));
-    if (isCharacterPresent(funcName2, '.')){
-        std::string objName = funcName2.substr(0, funcName2 .find('.'));
-        funcName2 = funcName2.substr(funcName2.find('.') + 1);
+    methodName = lineVec[1].substr(0, methodName .find('('));
+    if (isCharacterPresent(methodName, '.')){
+        std::string objName = methodName.substr(0, methodName .find('.'));
+        methodName = methodName.substr(methodName.find('.') + 1);
 
         if (JackTokenizer::isValid(validVarTypes, objName)){
                 std::cerr << "Cannot use '.' operator on predefined types." << std::endl;
         }
-        else if ((subroutineSymbolTable.index(objName.c_str()) != -1) || (classSymbolTable.index(objName.c_str())) != -1) {
+        else if ((subroutineSymbolTable.index(objName.c_str()) != -1) || (classSymbolTable.index(objName.c_str())) != -1 ) {
             if (subroutineSymbolTable.index(objName.c_str()) != -1) {
                 std::string objType = subroutineSymbolTable.type(objName);
 
                 if (!(JackTokenizer::isValid(validVarTypes, objType))) {
                     vmFile.writePush(subroutineSymbolTable.kind(objName),  subroutineSymbolTable.index(objName.c_str()));
-                    funcName2 = objType + "." + funcName2;
-                    funcName = clearName(funcName2);
+                    methodName = objType + "." + methodName;
+                    funcName = clearName(methodName);
                     objAddition = 1;
                     functionData.insert({funcName, objAddition});
                 }
             }
+
             else {
                 vmFile.writePush(classSymbolTable.kind(objName), classSymbolTable.index(objName.c_str()));
-                funcName2 = classSymbolTable.type(objName) + "." + funcName2;
-                funcName = clearName(funcName2);
+                methodName = classSymbolTable.type(objName) + "." + methodName;
+                funcName = clearName(methodName);
                 objAddition = 1;
                 functionData.insert({funcName, objAddition});
             }
+        }
+        else if (JackTokenizer::isValid(validComplimentaryVarTypes, objName)) {
+                methodName = objName+ "." + methodName;
+                funcName = clearName(methodName);
+                objAddition = 1;
+                functionData.insert({funcName, objAddition});
         }
         else{
             funcName = lineVec[1].substr(0, lineVec[1].find('('));
@@ -430,6 +437,7 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
             functionData.insert({funcName, objAddition});
         }
     }
+
     else{
         funcName = lineVec[1].substr(0, lineVec[1].find('('));
         funcName = clearName(funcName);
