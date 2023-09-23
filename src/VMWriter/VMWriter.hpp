@@ -30,7 +30,7 @@ public:
     void writeReturn();
     void consume();
     std::streamoff getLineNo();
-    void writeAtPos(long long pos, std::string s);
+    void writeComment(std::string comment);
 };
 
 #endif

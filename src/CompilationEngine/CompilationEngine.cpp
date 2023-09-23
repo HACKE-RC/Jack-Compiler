@@ -1510,7 +1510,6 @@ CODE CompilationEngine::compileArray( std::string& line) {
 
     compileExpression(varName);
     compileExpression(lineC);
-//    m_insideArrayExp = true;
 
     vmFile.writeArithmetic("+");
 

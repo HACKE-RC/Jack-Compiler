@@ -110,13 +110,10 @@ std::streamoff VMWriter::getLineNo() {
     return m_fStream.tellp();
 }
 
-void VMWriter::writeAtPos(long long pos, std::string s) {
-    auto current = getLineNo();
-    m_fStream.seekp(pos);
-    m_fStream.write(s.c_str(), s.length());
-    m_fStream.seekp(current);
+void VMWriter::writeComment(std::string comment){
+    m_fStream << "// " + comment + "\n";
+    consume();
 }
-
 //VMWriter::~VMWriter() {
 //    m_fStream.close();
 //}
