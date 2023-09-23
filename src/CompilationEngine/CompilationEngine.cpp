@@ -450,6 +450,7 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
     return functionData;
 }
 void CompilationEngine::compileDo(const std::string& line = "") {
+    insideDo = true;
     std::string expressions;
 
     if (line.empty()){
@@ -495,6 +496,8 @@ void CompilationEngine::compileDo(const std::string& line = "") {
     if (!m_isArrayVal){
         vmFile.writePop("temp", 0);
     }
+
+    insideDo = false;
 }
 
 CODE CompilationEngine::removeBrackets(CODE code) {
@@ -1513,7 +1516,7 @@ CODE CompilationEngine::compileArray( std::string& line) {
 
     vmFile.writeArithmetic("+");
 
-    if (m_arrayDepth > 1 || m_isArrayVal) {
+    if (m_arrayDepth > 1 || m_isArrayVal || insideDo) {
         vmFile.writePop("pointer", 1);
         vmFile.writePush("that", 0);
         lineC2.erase(std::remove_if(lineC2.begin(), lineC2.end(), ::isspace), lineC2.end());

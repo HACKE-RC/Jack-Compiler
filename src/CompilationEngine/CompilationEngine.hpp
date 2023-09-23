@@ -25,6 +25,7 @@ private:
     bool insideClass = false;
     bool insideSubroutine = false;
     bool insideWhile = false;
+    bool insideDo = false;
 
 private:
     std::string m_currentClassName;
