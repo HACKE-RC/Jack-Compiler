@@ -976,6 +976,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
         if (std::count(expression.begin(), expression.end(), '[') >= 1 && std::count(expression.begin(), expression.end(), ']') >= 1){
             m_isArrayVal = true;
             compileExpression(expression);
+            m_isArrayVal = false;
         }
         else{
             compileExpressionList(expression);
