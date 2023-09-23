@@ -507,8 +507,6 @@ std::string CompilationEngine::removeBrackets(const std::string& str, bool inLin
     auto start = str.find_first_of(brackets.begin()->first);
     unsigned long long end;
 
-
-
     if (start == std::string::npos) {
         return str;
     }
@@ -564,17 +562,22 @@ void CompilationEngine::compileExpression(std::string& expr) {
         auto arrayExprk = splitNonArrayExprFromArrayExpr(exprC);
         if (arrayExprk.size() > 1){
             exprVec = arrayExprk;
+//            m_insideArrayExp = true;
             goto skipVecDec;
         }
 
         auto arrayExpr = compileArray(expr);
         if (!arrayExpr.empty()) {
+//            m_insideArrayExp = true;
             exprVec = arrayExpr;
             if (exprVec.empty()){
                 return;
             }
             n = 0;
             goto compileExpressionOperation;
+        }
+        else if (arrayExpr.empty()){
+            return;
         }
     }
 
@@ -1493,6 +1496,7 @@ CODE CompilationEngine::splitArrayExpr(std::string expression){
 }
 
 CODE CompilationEngine::compileArray( std::string& line) {
+    m_arrayDepth++;
     std::string lineC = line;
     std::string lineC2 = line;
     std::string varName;
@@ -1505,27 +1509,32 @@ CODE CompilationEngine::compileArray( std::string& line) {
 
     compileExpression(varName);
     compileExpression(lineC);
+//    m_insideArrayExp = true;
 
     vmFile.writeArithmetic("+");
 
-    if (m_isArrayVal){
+    if (m_arrayDepth > 1 || m_isArrayVal) {
         vmFile.writePop("pointer", 1);
         vmFile.writePush("that", 0);
         lineC2.erase(std::remove_if(lineC2.begin(), lineC2.end(), ::isspace), lineC2.end());
 
-        if (lineC2.back() != ']'){
+        if (lineC2.back() != ']') {
+            m_arrayDepth--;
             return arrayExprVec;
-        }
-        else if (!arrayExprVec.empty()){
+        } else if (!arrayExprVec.empty()) {
+            m_arrayDepth--;
             return arrayExprVec;
-        }
-        else{
+        } else {
             line.clear();
         }
+//    }
+//    else{
+//        line.clear();
+//    }
+
     }
-    else{
-        line.clear();
-    }
+//    m_insideArrayExp = false;
+    m_arrayDepth--;
     return arrayExprVec;
 }
 
