@@ -492,7 +492,9 @@ void CompilationEngine::compileDo(const std::string& line = "") {
 
     compileExpressionList(expressions);
     callSubroutine(line, funcName, objAddition);
-    vmFile.writePop("temp", 0);
+    if (!m_isArrayVal){
+        vmFile.writePop("temp", 0);
+    }
 }
 
 CODE CompilationEngine::removeBrackets(CODE code) {
