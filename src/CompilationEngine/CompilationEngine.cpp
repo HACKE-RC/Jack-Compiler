@@ -988,9 +988,9 @@ void CompilationEngine::compileLet(const std::string& line = "") {
 //        checks if an array is to be manipulated.
         skipExpressionParsing:
         if (m_isArrayDec){
-            vmFile.writePop("temp", 1);
+            vmFile.writePop("temp", 0);
             vmFile.writePop("pointer", 1);
-            vmFile.writePush("temp", 1);
+            vmFile.writePush("temp", 0);
             vmFile.writePop("that", 0);
             m_isArrayDec = false;
         }
