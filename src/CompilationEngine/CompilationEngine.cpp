@@ -558,17 +558,15 @@ void CompilationEngine::compileExpression(std::string& expr) {
             prioritizeBrackets(exprC);
             exprC = removeBrackets(exprC, false, roundBrackets);
         }
-
+//        fix split..Expr function
         auto arrayExprk = splitNonArrayExprFromArrayExpr(exprC);
         if (arrayExprk.size() > 1){
             exprVec = arrayExprk;
-//            m_insideArrayExp = true;
             goto skipVecDec;
         }
 
         auto arrayExpr = compileArray(expr);
         if (!arrayExpr.empty()) {
-//            m_insideArrayExp = true;
             exprVec = arrayExpr;
             if (exprVec.empty()){
                 return;
@@ -1437,7 +1435,7 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                 expressionC = expressionC.substr(expressionC.find_first_of(']') + 1);
                 str.clear();
                 lastOpIndex = -1;
-                i = 0;
+                i = -1;
                 continue;
             }
         }
