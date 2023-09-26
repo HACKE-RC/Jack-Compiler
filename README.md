@@ -1,2 +1,2 @@
 # jack-syntax-analyser
-Syntax Analyser for Jack Programming Language which can do both Lexical Analysis (tokenizing) and Parsing of the Language into a well-defined XML file.
+Jack Programming Language Compiler written purely in C++, does not follow most of the compiler thoery.
