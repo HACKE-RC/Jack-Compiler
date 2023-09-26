@@ -930,6 +930,7 @@ void CompilationEngine::callSubroutine(const std::string& line, std::string func
 }
 
 void CompilationEngine::compileLet(const std::string& line = "") {
+    bool isArray = false;
     std::string currentLine ;
     if (!(line.empty())){
         currentLine = line;
@@ -946,6 +947,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
 
     if (std::count(varName.begin(), varName.end(), '[') >= 1 && std::count(varName.begin(), varName.end(), ']') >= 1){
         m_isArrayDec = true;
+        isArray = true;
         compileExpression(varName);
     }
 
@@ -965,6 +967,12 @@ void CompilationEngine::compileLet(const std::string& line = "") {
             int objAddition = funcData.begin()->second;
 
             callSubroutine(line, funcName, objAddition);
+            if (m_isArrayDec){
+                vmFile.writePop("temp", 0);
+                vmFile.writePop("pointer", 1);
+                vmFile.writePush("temp", 0);
+                vmFile.writePop("that", 0);
+            }
         }
     }
     else{
@@ -1511,8 +1519,8 @@ CODE CompilationEngine::compileArray( std::string& line) {
     varName = arrayExpr[0].substr(0, arrayExpr[0].find_first_of('['));
     CODE arrayExprVec(arrayExpr.begin() + 1, arrayExpr.end());
 
-    compileExpression(varName);
     compileExpression(lineC);
+    compileExpression(varName);
 
     vmFile.writeArithmetic("+");
 
@@ -1530,13 +1538,7 @@ CODE CompilationEngine::compileArray( std::string& line) {
         } else {
             line.clear();
         }
-//    }
-//    else{
-//        line.clear();
-//    }
-
     }
-//    m_insideArrayExp = false;
     m_arrayDepth--;
     return arrayExprVec;
 }
