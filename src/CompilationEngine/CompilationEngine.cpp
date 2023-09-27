@@ -398,6 +398,13 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
     int objAddition = 0;
 
     methodName = lineVec[1].substr(0, methodName .find('('));
+//     because params parser can not detect quoted parameters
+    if (lineVec[1].find('(')+1 < lineVec[1].length()){
+        if (lineVec[1].at(lineVec[1].find('(') + 1) == '\"'){
+//            ++objAddition;
+            ++m_StringObjAddition;
+        }
+    }
     if (isCharacterPresent(methodName, '.')){
         std::string objName = methodName.substr(0, methodName .find('.'));
         methodName = methodName.substr(methodName.find('.') + 1);
@@ -429,7 +436,6 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
         else if (JackTokenizer::isValid(validComplimentaryVarTypes, objName)) {
                 methodName = objName+ "." + methodName;
                 funcName = clearName(methodName);
-                objAddition = 1;
                 functionData.insert({funcName, objAddition});
         }
         else{
@@ -448,6 +454,7 @@ std::unordered_map<std::string, int> CompilationEngine::getFunctionName(CODE& li
         objAddition = 1;
         functionData.insert({funcName, objAddition});
     }
+
     return functionData;
 }
 void CompilationEngine::compileDo(const std::string& line = "") {
@@ -476,12 +483,6 @@ void CompilationEngine::compileDo(const std::string& line = "") {
 
     if (line.find('(') != std::string::npos && line.find(')') != std::string::npos){
         expressions = removeBrackets(line, false, roundBrackets);
-        if (!expressions.empty()){
-            auto k = splitString(expressions, ',');
-            if (!k.empty()){
-                objAddition = k.size();
-            }
-        }
     }
     else{
         if (line.find('(') == std::string::npos){
@@ -564,7 +565,6 @@ void CompilationEngine::compileExpression(std::string& expr) {
             prioritizeBrackets(exprC);
             exprC = removeBrackets(exprC, false, roundBrackets);
         }
-//        fix split..Expr function
         auto arrayExprk = splitNonArrayExprFromArrayExpr(exprC);
         if (arrayExprk.size() > 1){
             exprVec = arrayExprk;
@@ -926,7 +926,14 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
 void CompilationEngine::callSubroutine(const std::string& line, std::string funcName, int objAddition) {
     std::string params;
 
+    params = removeBrackets(line, false, roundBrackets);
     auto paramsVec = splitString(params, ',');
+    if (paramsVec.size() == 0){
+        if (m_StringObjAddition != 0){
+            ++objAddition;
+            m_StringObjAddition = 0;
+        }
+    }
     vmFile.writeCall(std::move(funcName), paramsVec.size() + objAddition);
 }
 
@@ -973,6 +980,7 @@ void CompilationEngine::compileLet(const std::string& line = "") {
                 vmFile.writePop("pointer", 1);
                 vmFile.writePush("temp", 0);
                 vmFile.writePop("that", 0);
+                m_isArrayDec = false;
             }
         }
     }
@@ -1371,6 +1379,7 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
     expressionC.assign(expression);
     std::string str;
     int i = 0;
+    int lastIndex = 0;
     expressionC.erase(std::remove_if(expressionC.begin(), expressionC.end(), ::isspace), expressionC.end());
     for (; i < expressionC.length(); i++){
         if (i+1 < expressionC.length()){
@@ -1430,7 +1439,12 @@ CODE CompilationEngine::splitNonArrayExprFromArrayExpr(std::string& expression){
                     continue;
                 }
                 else{
-                    str += expressionC.substr(i, 1);
+                    str += expressionC.substr(lastIndex, i+1);
+                    lastIndex = i+2;
+                    if (expressionC.find(str)+str.length()==expressionC.length()){
+                        split.push_back(str);
+                        return split;
+                    }
                 }
                 continue;
             }

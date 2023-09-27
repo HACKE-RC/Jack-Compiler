@@ -53,11 +53,12 @@ private:
 
 private:
     int m_currentLine;
-    int m_continueWhileLabelCount = 0;
-    int m_whileLabelCount = 0;
+    int m_arrayDepth = 0;
     bool m_isArrayDec = false;
     bool m_isArrayVal = false;
-    int m_arrayDepth = 0;
+    int m_whileLabelCount = 0;
+    int m_StringObjAddition = 0;
+    int m_continueWhileLabelCount = 0;
 
 private:
     std::string m_currentSubroutineDef;
