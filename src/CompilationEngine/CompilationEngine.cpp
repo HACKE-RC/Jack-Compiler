@@ -935,6 +935,7 @@ void CompilationEngine::callSubroutine(const std::string& line, std::string func
         }
     }
     vmFile.writeCall(std::move(funcName), paramsVec.size() + objAddition);
+    m_StringObjAddition = 0;
 }
 
 void CompilationEngine::compileLet(const std::string& line = "") {
