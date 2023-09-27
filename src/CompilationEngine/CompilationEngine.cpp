@@ -5,6 +5,7 @@
 VMWriter vmFile;
 
 [[maybe_unused]] CompilationEngine::CompilationEngine(std::string fName) {
+
     std::string fName2 = fName;
 
     CODE code;
