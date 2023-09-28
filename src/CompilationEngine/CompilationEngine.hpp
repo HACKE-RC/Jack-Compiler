@@ -18,7 +18,7 @@ static CODE validBooleanOp = {"&", "|"};
 
 class CompilationEngine {
 public:
-    [[maybe_unused]] explicit CompilationEngine(std::string fName);
+    explicit CompilationEngine(std::string fName);
     CODE vmCode = {};
 
 private:
@@ -38,20 +38,20 @@ private:
     std::map<std::string, std::string> subroutineTypes;
 
     std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
-
     std::string CONTINUE_IF_LABEL_PREFIX = "LABEL_CONTINUE_IF_";
     std::string CONTINUE_WHILE_LABEL_PREFIX = "LABEL_CONTINUE_WHILE_";
     std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";
     std::string m_outfName;
+
 private:
     CODE tempTokens;
     CODE m_code;
-private:
 
+private:
     SymbolTable classSymbolTable;
     SymbolTable subroutineSymbolTable;
-private:
 
+private:
     int m_currentLine;
     int m_arrayDepth = 0;
     bool m_isArrayDec = false;
