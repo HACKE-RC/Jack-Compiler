@@ -4,8 +4,7 @@
 
 VMWriter vmFile;
 
-[[maybe_unused]] CompilationEngine::CompilationEngine(std::string fName) {
-
+CompilationEngine::CompilationEngine(std::string fName) {
     std::string fName2 = fName;
 
     CODE code;
@@ -60,6 +59,7 @@ VMWriter vmFile;
         }
     }
 
+    std::cout << "Compilation successful!" << std::endl;
 }
 
 void CompilationEngine::compileClass() {
@@ -91,9 +91,6 @@ void CompilationEngine::compileClass() {
         insideClass = true;
     }
     compileSubroutine();
-    for (auto& v: vmCode){
-        std::cout << v << std::endl;
-    }
 }
 
 
@@ -153,7 +150,6 @@ std::string removeNonAlphanumeric(const std::string& input) {
 }
 
 void CompilationEngine::compileSubroutine() {
-    subroutineSymbolTable.display();
     subroutineSymbolTable.reset();
     tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
 
@@ -873,6 +869,15 @@ std::string CompilationEngine::prioritizeBrackets(std::string &expression) {
     expressionVec = splitString(expression, ',');
 
     if (std::find(expressionVec.begin(), expressionVec.end(), ")") == expressionVec.end()){
+        if (!(expression.find('(') != std::string::npos && expression.find(')') != std::string::npos)) {
+//            if (expression.find('(')+1!=expression.find(')')) {
+//                return expression;
+//            }
+            return expression;
+        }
+    }
+
+    if (expression.find('(')+1!=expression.find(')')) {
         return expression;
     }
 
@@ -1166,9 +1171,6 @@ void CompilationEngine::compileIf() {
         }
 
         compileStatement(currentLine);
-//        if (currentLine.starts_with("let")){
-//            m_currentLine--;
-//        }
         if (hasElse){
             insideIf = true;
             vmFile.writeGoto(continueIfLabel);
