@@ -26,19 +26,19 @@ private:
     bool insideSubroutine = false;
     bool insideWhile = false;
     bool insideDo = false;
-
 private:
+
     std::string m_currentClassName;
-
 private:
+
     std::map<std::string, std::string> reservedValues = {
             {"true", "-1"},
             {"false", "0"}
     };
-
     std::map<std::string, std::string> subroutineTypes;
 
     std::string ELSE_LABEL_PREFIX = "LABEL_ELSE_";
+
     std::string CONTINUE_IF_LABEL_PREFIX = "LABEL_CONTINUE_IF_";
     std::string CONTINUE_WHILE_LABEL_PREFIX = "LABEL_CONTINUE_WHILE_";
     std::string WHILE_LABEL_PREFIX = "LABEL_WHILE_";
@@ -46,12 +46,12 @@ private:
 private:
     CODE tempTokens;
     CODE m_code;
-
 private:
+
     SymbolTable classSymbolTable;
     SymbolTable subroutineSymbolTable;
-
 private:
+
     int m_currentLine;
     int m_arrayDepth = 0;
     bool m_isArrayDec = false;

@@ -338,6 +338,19 @@ int JackTokenizer::addSemicolon(std::string& item, CODE &vec) {
                 return 0;
             }
             else {
+                item.erase(std::remove(item.begin(), item.end(), ' '), item.end());
+               if (item.starts_with(';')){
+                   vec.push_back(";");
+                   if (item.length() + 1 >= 2){
+                       item = item.substr(1);
+                       if (item.length()==1){
+                           if (item == "}"){
+                               return -1;
+                           }
+                       }
+                       return 0;
+                   }
+               }
                 item = item.substr(i);
                 return 0;
             }

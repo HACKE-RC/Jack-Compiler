@@ -1144,8 +1144,8 @@ void CompilationEngine::compileIf() {
         expression = removeBrackets(currentLine, false, roundBrackets);
     }
     else if (clearName(currentLine).back() == '}'){
-        expression = removeBrackets(currentLine, false, roundBrackets);
         inlineIf = true;
+        expression = removeBrackets(currentLine, inlineIf, roundBrackets);
     }
 
     compileExpression(expression);
@@ -1166,7 +1166,9 @@ void CompilationEngine::compileIf() {
         }
 
         compileStatement(currentLine);
-
+//        if (currentLine.starts_with("let")){
+//            m_currentLine--;
+//        }
         if (hasElse){
             insideIf = true;
             vmFile.writeGoto(continueIfLabel);
@@ -1296,7 +1298,7 @@ void CompilationEngine::compileWhile() {
     vmFile.writeIf(CONTINUE_WHILE_LABEL_PREFIX + std::to_string(contCount2));
 
     m_currentLine++;
-    while (std::find(tempTokens.begin(), tempTokens.end(), "}") == tempTokens.end()) {
+    while (tempTokens[0] != "}") {
         compileStatement();
         tempTokens = JackTokenizer::tokenizeCode(getNthToken(m_currentLine));
     }
