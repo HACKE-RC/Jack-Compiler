@@ -5,5 +5,5 @@ The purpose of the project was for me to have fun and build something functional
 It passes all the test given in the Nand2Tetris course and can theoritically compile any piece of jack code. 
 
 # Running the output
-The compiler produces output in the Jack Virtual Machine (JVM) code, so in order to run it you would have to get the software suite from [here](https://www.nand2tetris.org/software) and then open the folder which contains the output files and it will run it. 
+The compiler produces output in the Jack Virtual Machine (JVM, unrelated to java) code, so in order to run it you would have to get the software suite from [here](https://www.nand2tetris.org/software) and then open the folder which contains the output files and it will run it. 
 The output JVM files are stored in tests/<test_name>/output folder.
