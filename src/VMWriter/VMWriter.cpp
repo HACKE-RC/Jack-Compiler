@@ -114,8 +114,5 @@ void VMWriter::writeComment(std::string comment){
     m_fStream << "// " + comment + "\n";
     consume();
 }
-//VMWriter::~VMWriter() {
-//    m_fStream.close();
-//}
 
 VMWriter::VMWriter() = default;
